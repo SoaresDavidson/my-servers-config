@@ -1,0 +1,216 @@
+version: "3.7"
+
+services:
+  tailscale-sonarr:
+    image: tailscale/tailscale:latest
+    container_name: sonarr_tailscale
+    hostname: sonarr
+    ports:
+      - "8989:8989"
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - tailscale-sonarr-state:/var/lib/tailscale
+      - ./ts-serve.sonarr.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    networks:
+      - media-network
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    network_mode: service:tailscale-sonarr
+    depends_on:
+      - tailscale-sonarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./sonarr/config:/config
+      - ${DOWNLOADS_HOST_PATH}:${CONTAINER_DOWNLOADS_PATH}
+      - ${MEDIA_HOST_PATH}/tv:${CONTAINER_MEDIA_PATH}/tv
+    restart: unless-stopped
+
+  tailscale-prowlarr:
+    image: tailscale/tailscale:latest
+    container_name: prowlarr_tailscale
+    hostname: prowlarr
+    ports:
+      - "9696:9696"
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - tailscale-prowlarr-state:/var/lib/tailscale
+      - ./ts-serve.prowlarr.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    networks:
+      - media-network
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    network_mode: service:tailscale-prowlarr
+    depends_on:
+      - tailscale-prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./prowlarr/config:/config
+    restart: unless-stopped
+
+  tailscale-lidarr:
+    image: tailscale/tailscale:latest
+    container_name: lidarr_tailscale
+    hostname: lidarr
+    ports:
+      - "8686:8686"
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - tailscale-lidarr-state:/var/lib/tailscale
+      - ./ts-serve.lidarr.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    networks:
+      - media-network
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    network_mode: service:tailscale-lidarr
+    depends_on:
+      - tailscale-lidarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./lidarr/config:/config
+      - ${DOWNLOADS_HOST_PATH}:${CONTAINER_DOWNLOADS_PATH}
+      - ${MEDIA_HOST_PATH}/music:${CONTAINER_MEDIA_PATH}/music
+    restart: unless-stopped
+
+  tailscale-bazarr:
+    image: tailscale/tailscale:latest
+    container_name: bazarr_tailscale
+    hostname: bazarr
+    ports:
+      - "6767:6767"
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - tailscale-bazarr-state:/var/lib/tailscale
+      - ./ts-serve.bazarr.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    networks:
+      - media-network
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    network_mode: service:tailscale-bazarr
+    depends_on:
+      - tailscale-bazarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./bazarr/config:/config
+      - ${MEDIA_HOST_PATH}/tv:${CONTAINER_MEDIA_PATH}/tv
+      - ${MEDIA_HOST_PATH}/movies:${CONTAINER_MEDIA_PATH}/movies
+    restart: unless-stopped
+
+  tailscale-profilarr:
+    image: tailscale/tailscale:latest
+    container_name: profilarr_tailscale
+    hostname: profilarr
+    ports:
+      - "6868:6868"
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - tailscale-profilarr-state:/var/lib/tailscale
+      - ./ts-serve.profilarr.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    networks:
+      - media-network
+
+  profilarr:
+    image: santiagosayshey/profilarr:latest
+    container_name: profilarr
+    network_mode: service:tailscale-profilarr
+    depends_on:
+      - tailscale-profilarr
+      - sonarr
+      - prowlarr
+      - lidarr
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ./profilarr/config:/config
+    restart: unless-stopped
+
+  decluttarr:
+    image: hotio/decluttarr:latest
+    container_name: decluttarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - DECLUTTARR_CRON="*/15 * * * *"
+      # API Keys must be added manually post-setup
+    volumes:
+      - ./decluttarr/config:/config
+    restart: unless-stopped
+    networks:
+      - media-network
+
+networks:
+  media-network:
+    name: ${NETWORK_NAME}
+    driver: bridge
+
+volumes:
+  tailscale-sonarr-state:
+  tailscale-prowlarr-state:
+  tailscale-lidarr-state:
+  tailscale-bazarr-state:
+  tailscale-profilarr-state:
