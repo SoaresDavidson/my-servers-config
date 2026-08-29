@@ -3,15 +3,15 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 ENV_FILE="$SCRIPT_DIR/.env"
-COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
+STACKS_DIR="$SCRIPT_DIR/stacks"
 
 if [ -e "$ENV_FILE" ]; then
   printf '%s\n' ".env já existe em $ENV_FILE. Edite manualmente ou remova antes de executar script."
   exit 1
 fi
 
-if [ ! -f "$COMPOSE_FILE" ]; then
-  printf '%s\n' "docker-compose.yml não encontrado em $SCRIPT_DIR."
+if [ ! -d "$STACKS_DIR" ]; then
+  printf '%s\n' "diretório stacks/ não encontrado em $SCRIPT_DIR."
   exit 1
 fi
 
@@ -79,15 +79,13 @@ timezone=$(suggest_timezone)
 
 ts_authkey=$(prompt_value 'TS_AUTHKEY' '' true)
 network_name=$(prompt_value 'NETWORK_NAME' 'medianet')
+config_host_path=$(prompt_value 'CONFIG_HOST_PATH' '/DATA/AppData/media-stack')
 downloads_host_path=$(prompt_value 'DOWNLOADS_HOST_PATH' '')
 media_host_path=$(prompt_value 'MEDIA_HOST_PATH' '')
-container_downloads_path=$(prompt_value 'CONTAINER_DOWNLOADS_PATH' '/data/downloads')
-container_media_path=$(prompt_value 'CONTAINER_MEDIA_PATH' '/data/media')
 
+require_absolute_path 'CONFIG_HOST_PATH' "$config_host_path"
 require_absolute_path 'DOWNLOADS_HOST_PATH' "$downloads_host_path"
 require_absolute_path 'MEDIA_HOST_PATH' "$media_host_path"
-require_absolute_path 'CONTAINER_DOWNLOADS_PATH' "$container_downloads_path"
-require_absolute_path 'CONTAINER_MEDIA_PATH' "$container_media_path"
 
 umask 077
 cat >"$ENV_FILE" <<EOF
@@ -96,16 +94,27 @@ PUID=$puid
 PGID=$pgid
 TZ=$timezone
 NETWORK_NAME=$network_name
+CONFIG_HOST_PATH=$config_host_path
 DOWNLOADS_HOST_PATH=$downloads_host_path
-CONTAINER_DOWNLOADS_PATH=$container_downloads_path
 MEDIA_HOST_PATH=$media_host_path
-CONTAINER_MEDIA_PATH=$container_media_path
 EOF
 chmod 600 "$ENV_FILE"
 
-if ! docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config >/dev/null; then
-  printf '%s\n' ".env criado, mas docker compose config falhou. Corrija $ENV_FILE e execute validação manualmente." >&2
-  exit 1
+for stack in "$STACKS_DIR"/*/; do
+  ln -sfn ../../.env "$stack/.env"
+done
+
+if ! docker network inspect "$network_name" >/dev/null 2>&1; then
+  docker network create "$network_name" >/dev/null
+  printf '%s\n' "rede $network_name criada."
 fi
 
-printf '%s\n' ".env criado e validado: $ENV_FILE"
+for stack in "$STACKS_DIR"/*/; do
+  name=$(basename "$stack")
+  if ! docker compose --env-file "$ENV_FILE" -f "$stack/docker-compose.yml" config >/dev/null; then
+    printf '%s\n' ".env criado, mas docker compose config falhou na stack $name. Corrija $ENV_FILE e valide manualmente." >&2
+    exit 1
+  fi
+done
+
+printf '%s\n' ".env criado e todas as stacks validadas: $ENV_FILE"
