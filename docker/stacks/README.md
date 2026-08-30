@@ -12,9 +12,19 @@ Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `ex
 
 ```sh
 cd docker
-./setup-env.sh              # cria .env, cria a rede e valida todas as stacks
+./setup-env.sh              # cria .env, os symlinks, a rede e valida as stacks
+./up.sh                     # sobe todas as stacks
+./up.sh sonarr radarr       # sobe apenas as stacks nomeadas
+./down.sh                   # derruba todas as stacks
+./link-env.sh               # recria os symlinks .env (já chamado pelo setup-env)
+```
+
+Os scripts passam `--env-file ../../.env` explicitamente, então funcionam mesmo
+sem os symlinks. Os symlinks existem para o uso manual:
+
+```sh
 cd stacks/sonarr
-docker compose up -d
+docker compose up -d        # lê o .env do próprio diretório do compose
 ```
 
 ## CasaOS

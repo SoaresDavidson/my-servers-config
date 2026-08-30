@@ -100,9 +100,7 @@ MEDIA_HOST_PATH=$media_host_path
 EOF
 chmod 600 "$ENV_FILE"
 
-for stack in "$STACKS_DIR"/*/; do
-  ln -sfn ../../.env "$stack/.env"
-done
+"$SCRIPT_DIR/link-env.sh"
 
 if ! docker network inspect "$network_name" >/dev/null 2>&1; then
   docker network create "$network_name" >/dev/null
