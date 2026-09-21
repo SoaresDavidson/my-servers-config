@@ -6,6 +6,8 @@ Uma stack por serviço. Cada diretório tem:
 - `ts-serve.json` — configuração do `tailscale serve`, apontando para a porta da aplicação em `127.0.0.1`.
 - `.env` — symlink para `../../.env`, gerado por `../setup-env.sh`.
 
+O estado de autenticação do Tailscale fica em `${CONFIG_HOST_PATH}/tailscale/<serviço>`, como bind mount. Volume nomeado não é usado porque o formulário do CasaOS não sabe importá-lo.
+
 Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `setup-env.sh`.
 
 ## Uso
@@ -37,7 +39,28 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | lidarr | 8686 | 8686 |
 | bazarr | 6767 | 6767 |
 | profilarr | 6868 | 6868 |
-| qbittorrent | — (sem porta no host, atrás da Proton VPN) | 8080 |
+| qbittorrent | 8080 (sem Tailscale, atrás da Proton VPN) | 8080 |
 | jellyfin | 8096 | 8096 |
 | jellyseerr | 5055 | 5055 |
+| readarr | 8787 | 8787 |
+| calibre | 8082 (GUI), 8081 (content server) | 8080, 8081 |
+| questarr | 5000 | 5000 |
 | shared (flaresolverr, decluttarr) | — | — |
+
+## Layout de dados
+
+Downloads e mídia entram nos containers como **um único mount**, `${DATA_HOST_PATH}:/data`:
+
+```
+/data
+├── downloads          # destino do qBittorrent
+└── media
+    ├── tv             # root folder do Sonarr
+    ├── movies         # root folder do Radarr
+    ├── music          # root folder do Lidarr
+    └── books          # root folder do Readarr e biblioteca do Calibre
+```
+
+Montar como um só mount é o que permite hardlink entre o download e a biblioteca. Com binds separados (`/downloads` e `/tv`), o `link()` falha com `EXDEV` mesmo estando no mesmo filesystem do host, e todo import vira cópia — dobrando o espaço em disco e quebrando o seeding.
+
+Jellyfin, Bazarr e Calibre recebem só `${DATA_HOST_PATH}/media:/data/media`, já que não precisam enxergar os downloads.
