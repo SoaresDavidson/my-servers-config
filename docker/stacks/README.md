@@ -42,8 +42,9 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | qbittorrent | 8080 (sem Tailscale, atrás da Proton VPN) | 8080 |
 | jellyfin | 8096 | 8096 |
 | jellyseerr | 5055 | 5055 |
-| readarr | 8787 | 8787 |
+| bookshelf (fork do Readarr) | 8787 | 8787 |
 | calibre | 8082 (GUI), 8081 (content server) | 8080, 8081 |
+| shelfarr | 5056 | 80 |
 | questarr | 5000 | 5000 |
 | shared (flaresolverr, decluttarr) | — | — |
 
@@ -58,9 +59,12 @@ Downloads e mídia entram nos containers como **um único mount**, `${DATA_HOST_
     ├── tv             # root folder do Sonarr
     ├── movies         # root folder do Radarr
     ├── music          # root folder do Lidarr
-    └── books          # root folder do Readarr e biblioteca do Calibre
+    ├── books          # root folder do Bookshelf, biblioteca do Calibre, ebooks do Shelfarr
+    └── audiobooks     # audiobooks do Shelfarr
 ```
 
 Montar como um só mount é o que permite hardlink entre o download e a biblioteca. Com binds separados (`/downloads` e `/tv`), o `link()` falha com `EXDEV` mesmo estando no mesmo filesystem do host, e todo import vira cópia — dobrando o espaço em disco e quebrando o seeding.
 
 Jellyfin, Bazarr e Calibre recebem só `${DATA_HOST_PATH}/media:/data/media`, já que não precisam enxergar os downloads.
+
+Shelfarr é exceção: usa binds separados (`/downloads`, `/ebooks`, `/audiobooks`) porque a imagem espera esses caminhos e move o arquivo em vez de fazer hardlink.
