@@ -1,8 +1,8 @@
 services:
-  tailscale-readarr:
+  tailscale-bookshelf:
     image: tailscale/tailscale:latest
-    container_name: readarr_tailscale
-    hostname: readarr
+    container_name: bookshelf_tailscale
+    hostname: bookshelf
     ports:
       - "8787:8787"
     environment:
@@ -11,7 +11,7 @@ services:
       - TS_SERVE_CONFIG=/config/ts-serve.json
       - TS_USERSPACE=false
     volumes:
-      - ${CONFIG_HOST_PATH}/tailscale/readarr:/var/lib/tailscale
+      - ${CONFIG_HOST_PATH}/tailscale/bookshelf:/var/lib/tailscale
       - ./ts-serve.json:/config/ts-serve.json:ro
       - /dev/net/tun:/dev/net/tun
     cap_add:
@@ -21,19 +21,20 @@ services:
     networks:
       - media-network
 
-  readarr:
-    # linuxserver nao publica tag latest para o Readarr; develop e a estavel.
-    image: lscr.io/linuxserver/readarr:develop
-    container_name: readarr
-    network_mode: service:tailscale-readarr
+  bookshelf:
+    # Readarr foi descontinuado e as imagens saíram dos registros. Bookshelf e o fork mantido,
+    # mesma UI e porta, com metadados do Hardcover.
+    image: ghcr.io/pennydreadful/bookshelf:hardcover
+    container_name: bookshelf
+    network_mode: service:tailscale-bookshelf
     depends_on:
-      - tailscale-readarr
+      - tailscale-bookshelf
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - ${CONFIG_HOST_PATH}/readarr/config:/config
+      - ${CONFIG_HOST_PATH}/bookshelf/config:/config
       - ${DATA_HOST_PATH}:/data
     restart: unless-stopped
 
@@ -44,20 +45,20 @@ networks:
 
 
 x-casaos:
-  main: tailscale-readarr
+  main: tailscale-bookshelf
   architectures:
     - amd64
     - arm64
   author: SoaresDavidson
-  developer: linuxserver.io
+  developer: pennydreadful
   category: Media
   icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/readarr.png
   scheme: http
   port_map: "8787"
   index: /
   title:
-    custom: Readarr
+    custom: Bookshelf
   tagline:
-    custom: Readarr atras de Tailscale
+    custom: Bookshelf atras de Tailscale
   description:
-    custom: Readarr exposto pela sidecar Tailscale, na rede Docker compartilhada.
+    custom: Bookshelf exposto pela sidecar Tailscale, na rede Docker compartilhada.
