@@ -43,7 +43,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | jellyfin | 8096 | 8096 |
 | jellyseerr | 5055 | 5055 |
 | bookshelf (fork do Readarr) | 8787 | 8787 |
-| calibre | 8082 (GUI), 8081 (content server) | 8080, 8081 |
+| calibre | 8082 (GUI), 8081 (content server), 9090 (dispositivo sem fio) | 8080, 8081, 9090 |
 | shelfarr | 5056 | 80 |
 | questarr | 5000 | 5000 |
 | shared (flaresolverr, decluttarr) | — | — |
@@ -59,7 +59,8 @@ Downloads e mídia entram nos containers como **um único mount**, `${DATA_HOST_
     ├── tv             # root folder do Sonarr
     ├── movies         # root folder do Radarr
     ├── music          # root folder do Lidarr
-    ├── books          # root folder do Bookshelf, biblioteca do Calibre, ebooks do Shelfarr
+    ├── books          # biblioteca do Calibre e root folder do Bookshelf
+    │   └── inbox      # saida do Shelfarr; Calibre importa daqui (Automatic adding)
     └── audiobooks     # audiobooks do Shelfarr
 ```
 

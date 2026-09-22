@@ -6,8 +6,10 @@ services:
     ports:
       # 8080 no host ja e do qBittorrent; a GUI (KasmVNC) sai em 8082.
       - "8082:8080"
-      # Content server, usado pelo Readarr para importar na biblioteca.
+      # Content server, usado pelo Bookshelf para importar na biblioteca.
       - "8081:8081"
+      # Conexao de dispositivo sem fio (KOReader no Kindle). Porta fixa em Preferencias > Compartilhar.
+      - "9090:9090"
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
