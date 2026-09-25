@@ -11,7 +11,7 @@ services:
       - TS_SERVE_CONFIG=/config/ts-serve.json
       - TS_USERSPACE=false
     volumes:
-      - tailscale-state:/var/lib/tailscale
+      - ${CONFIG_HOST_PATH}/tailscale/radarr:/var/lib/tailscale
       - ./ts-serve.json:/config/ts-serve.json:ro
       - /dev/net/tun:/dev/net/tun
     cap_add:
@@ -33,8 +33,7 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_HOST_PATH}/radarr/config:/config
-      - ${DOWNLOADS_HOST_PATH}:/downloads
-      - ${MEDIA_HOST_PATH}/movies:/movies
+      - ${DATA_HOST_PATH}:/data
     restart: unless-stopped
 
 networks:
@@ -42,8 +41,6 @@ networks:
     name: ${NETWORK_NAME}
     external: true
 
-volumes:
-  tailscale-state:
 
 x-casaos:
   main: tailscale-radarr

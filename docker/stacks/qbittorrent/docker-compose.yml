@@ -2,6 +2,8 @@ services:
   qbittorrent:
     image: ghcr.io/hotio/qbittorrent:latest
     container_name: qbittorrent
+    ports:
+      - "8080:8080"
     cap_add:
       - NET_ADMIN
     devices:
@@ -16,15 +18,15 @@ services:
       - VPN_ENABLED=true
       - VPN_CONF=wg0
       - VPN_PROVIDER=proton
-      # Libera a bridge do Docker no killswitch, para os outros containers alcancarem a WebUI e a API.
-      - VPN_LAN_NETWORK=172.16.0.0/12
-      - VPN_EXPOSE_PORTS_ON_LAN=8080
+      # LAN fisica do host, para a WebUI responder a maquinas fora do servidor.
+      - VPN_LAN_NETWORK=192.168.100.0/24
+      - VPN_EXPOSE_PORTS_ON_LAN=8080/tcp
       - VPN_AUTO_PORT_FORWARD=true
       - VPN_HEALTHCHECK_ENABLED=true
       - PRIVOXY_ENABLED=false
     volumes:
       - ${CONFIG_HOST_PATH}/qbittorrent/config:/config
-      - ${DOWNLOADS_HOST_PATH}:/downloads
+      - ${DATA_HOST_PATH}:/data
     restart: unless-stopped
     networks:
       media-network:
@@ -50,4 +52,4 @@ x-casaos:
   tagline:
     custom: qBittorrent atras da Proton VPN
   description:
-    custom: qBittorrent com WireGuard da Proton VPN. Sem porta publicada no host, acessivel apenas pelos outros containers da rede compartilhada.
+    custom: qBittorrent com WireGuard da Proton VPN. WebUI publicada na porta 8080 do host.

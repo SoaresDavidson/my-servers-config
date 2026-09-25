@@ -1,17 +1,17 @@
 services:
-  tailscale-lidarr:
+  tailscale-sonarr:
     image: tailscale/tailscale:latest
-    container_name: lidarr_tailscale
-    hostname: lidarr
+    container_name: sonarr_tailscale
+    hostname: sonarr
     ports:
-      - "8686:8686"
+      - "8989:8989"
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_SERVE_CONFIG=/config/ts-serve.json
       - TS_USERSPACE=false
     volumes:
-      - ${CONFIG_HOST_PATH}/tailscale/lidarr:/var/lib/tailscale
+      - tailscale-state:/var/lib/tailscale
       - ./ts-serve.json:/config/ts-serve.json:ro
       - /dev/net/tun:/dev/net/tun
     cap_add:
@@ -21,19 +21,20 @@ services:
     networks:
       - media-network
 
-  lidarr:
-    image: lscr.io/linuxserver/lidarr:latest
-    container_name: lidarr
-    network_mode: service:tailscale-lidarr
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    network_mode: service:tailscale-sonarr
     depends_on:
-      - tailscale-lidarr
+      - tailscale-sonarr
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - ${CONFIG_HOST_PATH}/lidarr/config:/config
-      - ${DATA_HOST_PATH}:/data
+      - ${CONFIG_HOST_PATH}/sonarr/config:/config
+      - ${DOWNLOADS_HOST_PATH}:/downloads
+      - ${MEDIA_HOST_PATH}/tv:/tv
     restart: unless-stopped
 
 networks:
@@ -41,22 +42,24 @@ networks:
     name: ${NETWORK_NAME}
     external: true
 
+volumes:
+  tailscale-state:
 
 x-casaos:
-  main: tailscale-lidarr
+  main: tailscale-sonarr
   architectures:
     - amd64
     - arm64
   author: SoaresDavidson
   developer: linuxserver.io
   category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/lidarr.png
+  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/sonarr.png
   scheme: http
-  port_map: "8686"
+  port_map: "8989"
   index: /
   title:
-    custom: Lidarr
+    custom: Sonarr
   tagline:
-    custom: Lidarr atras de Tailscale
+    custom: Sonarr atras de Tailscale
   description:
-    custom: Lidarr exposto pela sidecar Tailscale, na rede Docker compartilhada.
+    custom: Sonarr exposto pela sidecar Tailscale, na rede Docker compartilhada.

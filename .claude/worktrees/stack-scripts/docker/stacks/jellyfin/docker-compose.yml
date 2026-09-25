@@ -1,17 +1,17 @@
 services:
-  tailscale-lidarr:
+  tailscale-jellyfin:
     image: tailscale/tailscale:latest
-    container_name: lidarr_tailscale
-    hostname: lidarr
+    container_name: jellyfin_tailscale
+    hostname: jellyfin
     ports:
-      - "8686:8686"
+      - "8096:8096"
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_SERVE_CONFIG=/config/ts-serve.json
       - TS_USERSPACE=false
     volumes:
-      - ${CONFIG_HOST_PATH}/tailscale/lidarr:/var/lib/tailscale
+      - tailscale-state:/var/lib/tailscale
       - ./ts-serve.json:/config/ts-serve.json:ro
       - /dev/net/tun:/dev/net/tun
     cap_add:
@@ -21,19 +21,20 @@ services:
     networks:
       - media-network
 
-  lidarr:
-    image: lscr.io/linuxserver/lidarr:latest
-    container_name: lidarr
-    network_mode: service:tailscale-lidarr
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    network_mode: service:tailscale-jellyfin
     depends_on:
-      - tailscale-lidarr
+      - tailscale-jellyfin
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - ${CONFIG_HOST_PATH}/lidarr/config:/config
-      - ${DATA_HOST_PATH}:/data
+      - ${CONFIG_HOST_PATH}/jellyfin/config:/config
+      - ${MEDIA_HOST_PATH}/tv:/tv
+      - ${MEDIA_HOST_PATH}/movies:/movies
     restart: unless-stopped
 
 networks:
@@ -41,22 +42,24 @@ networks:
     name: ${NETWORK_NAME}
     external: true
 
+volumes:
+  tailscale-state:
 
 x-casaos:
-  main: tailscale-lidarr
+  main: tailscale-jellyfin
   architectures:
     - amd64
     - arm64
   author: SoaresDavidson
   developer: linuxserver.io
   category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/lidarr.png
+  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/jellyfin.png
   scheme: http
-  port_map: "8686"
+  port_map: "8096"
   index: /
   title:
-    custom: Lidarr
+    custom: Jellyfin
   tagline:
-    custom: Lidarr atras de Tailscale
+    custom: Jellyfin atras de Tailscale
   description:
-    custom: Lidarr exposto pela sidecar Tailscale, na rede Docker compartilhada.
+    custom: Jellyfin exposto pela sidecar Tailscale, na rede Docker compartilhada.

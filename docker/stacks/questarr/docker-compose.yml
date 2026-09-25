@@ -1,17 +1,17 @@
 services:
-  tailscale-profilarr:
+  tailscale-questarr:
     image: tailscale/tailscale:latest
-    container_name: profilarr_tailscale
-    hostname: profilarr
+    container_name: questarr_tailscale
+    hostname: questarr
     ports:
-      - "6868:6868"
+      - "5000:5000"
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_SERVE_CONFIG=/config/ts-serve.json
       - TS_USERSPACE=false
     volumes:
-      - ${CONFIG_HOST_PATH}/tailscale/profilarr:/var/lib/tailscale
+      - ${CONFIG_HOST_PATH}/tailscale/questarr:/var/lib/tailscale
       - ./ts-serve.json:/config/ts-serve.json:ro
       - /dev/net/tun:/dev/net/tun
     cap_add:
@@ -21,16 +21,16 @@ services:
     networks:
       - media-network
 
-  profilarr:
-    image: santiagosayshey/profilarr:latest
-    container_name: profilarr
-    network_mode: service:tailscale-profilarr
+  questarr:
+    image: ghcr.io/doezer/questarr:latest
+    container_name: questarr
+    network_mode: service:tailscale-questarr
     depends_on:
-      - tailscale-profilarr
+      - tailscale-questarr
     environment:
-      - TZ=${TZ}
+      - SQLITE_DB_PATH=/app/data/sqlite.db
     volumes:
-      - ${CONFIG_HOST_PATH}/profilarr/config:/config
+      - ${CONFIG_HOST_PATH}/questarr/data:/app/data
     restart: unless-stopped
 
 networks:
@@ -38,22 +38,21 @@ networks:
     name: ${NETWORK_NAME}
     external: true
 
-
 x-casaos:
-  main: tailscale-profilarr
+  main: tailscale-questarr
   architectures:
     - amd64
     - arm64
   author: SoaresDavidson
-  developer: santiagosayshey
+  developer: doezer
   category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/profilarr.png
+  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/questarr.png
   scheme: http
-  port_map: "6868"
+  port_map: "5000"
   index: /
   title:
-    custom: Profilarr
+    custom: Questarr
   tagline:
-    custom: Profilarr atras de Tailscale
+    custom: Questarr atras de Tailscale
   description:
-    custom: Profilarr exposto pela sidecar Tailscale, na rede Docker compartilhada.
+    custom: Questarr exposto pela sidecar Tailscale, na rede Docker compartilhada.

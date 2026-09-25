@@ -2,8 +2,9 @@
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-ENV_FILE="$SCRIPT_DIR/.env"
-STACKS_DIR="$SCRIPT_DIR/stacks"
+DOCKER_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../docker" && pwd)
+ENV_FILE="$DOCKER_DIR/.env"
+STACKS_DIR="$DOCKER_DIR/stacks"
 
 if [ -e "$ENV_FILE" ]; then
   printf '%s\n' ".env já existe em $ENV_FILE. Edite manualmente ou remova antes de executar script."
@@ -11,7 +12,7 @@ if [ -e "$ENV_FILE" ]; then
 fi
 
 if [ ! -d "$STACKS_DIR" ]; then
-  printf '%s\n' "diretório stacks/ não encontrado em $SCRIPT_DIR."
+  printf '%s\n' "diretório stacks/ não encontrado em $DOCKER_DIR."
   exit 1
 fi
 
@@ -80,12 +81,10 @@ timezone=$(suggest_timezone)
 ts_authkey=$(prompt_value 'TS_AUTHKEY' '' true)
 network_name=$(prompt_value 'NETWORK_NAME' 'medianet')
 config_host_path=$(prompt_value 'CONFIG_HOST_PATH' '/DATA/AppData/media-stack')
-downloads_host_path=$(prompt_value 'DOWNLOADS_HOST_PATH' '')
-media_host_path=$(prompt_value 'MEDIA_HOST_PATH' '')
+data_host_path=$(prompt_value 'DATA_HOST_PATH' '/DATA')
 
 require_absolute_path 'CONFIG_HOST_PATH' "$config_host_path"
-require_absolute_path 'DOWNLOADS_HOST_PATH' "$downloads_host_path"
-require_absolute_path 'MEDIA_HOST_PATH' "$media_host_path"
+require_absolute_path 'DATA_HOST_PATH' "$data_host_path"
 
 umask 077
 cat >"$ENV_FILE" <<EOF
@@ -95,8 +94,7 @@ PGID=$pgid
 TZ=$timezone
 NETWORK_NAME=$network_name
 CONFIG_HOST_PATH=$config_host_path
-DOWNLOADS_HOST_PATH=$downloads_host_path
-MEDIA_HOST_PATH=$media_host_path
+DATA_HOST_PATH=$data_host_path
 EOF
 chmod 600 "$ENV_FILE"
 

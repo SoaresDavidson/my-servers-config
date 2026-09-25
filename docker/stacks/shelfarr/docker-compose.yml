@@ -36,7 +36,7 @@ services:
     volumes:
       - ${CONFIG_HOST_PATH}/shelfarr/config:/config
       # Shelfarr move arquivo (nao faz hardlink), entao binds separados nao custam nada aqui.
-      - ${DATA_HOST_PATH}/downloads:/downloads
+      - ${DATA_HOST_PATH}/Downloads:/downloads
       - ${DATA_HOST_PATH}/media/books/inbox:/ebooks
       - ${DATA_HOST_PATH}/media/audiobooks:/audiobooks
     restart: unless-stopped

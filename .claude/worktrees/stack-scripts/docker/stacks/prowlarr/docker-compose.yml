@@ -1,17 +1,17 @@
 services:
-  tailscale-lidarr:
+  tailscale-prowlarr:
     image: tailscale/tailscale:latest
-    container_name: lidarr_tailscale
-    hostname: lidarr
+    container_name: prowlarr_tailscale
+    hostname: prowlarr
     ports:
-      - "8686:8686"
+      - "9696:9696"
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_SERVE_CONFIG=/config/ts-serve.json
       - TS_USERSPACE=false
     volumes:
-      - ${CONFIG_HOST_PATH}/tailscale/lidarr:/var/lib/tailscale
+      - tailscale-state:/var/lib/tailscale
       - ./ts-serve.json:/config/ts-serve.json:ro
       - /dev/net/tun:/dev/net/tun
     cap_add:
@@ -21,19 +21,18 @@ services:
     networks:
       - media-network
 
-  lidarr:
-    image: lscr.io/linuxserver/lidarr:latest
-    container_name: lidarr
-    network_mode: service:tailscale-lidarr
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    network_mode: service:tailscale-prowlarr
     depends_on:
-      - tailscale-lidarr
+      - tailscale-prowlarr
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - ${CONFIG_HOST_PATH}/lidarr/config:/config
-      - ${DATA_HOST_PATH}:/data
+      - ${CONFIG_HOST_PATH}/prowlarr/config:/config
     restart: unless-stopped
 
 networks:
@@ -41,22 +40,24 @@ networks:
     name: ${NETWORK_NAME}
     external: true
 
+volumes:
+  tailscale-state:
 
 x-casaos:
-  main: tailscale-lidarr
+  main: tailscale-prowlarr
   architectures:
     - amd64
     - arm64
   author: SoaresDavidson
   developer: linuxserver.io
   category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/lidarr.png
+  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/prowlarr.png
   scheme: http
-  port_map: "8686"
+  port_map: "9696"
   index: /
   title:
-    custom: Lidarr
+    custom: Prowlarr
   tagline:
-    custom: Lidarr atras de Tailscale
+    custom: Prowlarr atras de Tailscale
   description:
-    custom: Lidarr exposto pela sidecar Tailscale, na rede Docker compartilhada.
+    custom: Prowlarr exposto pela sidecar Tailscale, na rede Docker compartilhada.

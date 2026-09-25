@@ -4,17 +4,22 @@ Uma stack por serviço. Cada diretório tem:
 
 - `docker-compose.yml` — sidecar Tailscale + aplicação (`network_mode: service:tailscale-<svc>`), mais o bloco `x-casaos` que define ícone, título e WebUI no dashboard do CasaOS.
 - `ts-serve.json` — configuração do `tailscale serve`, apontando para a porta da aplicação em `127.0.0.1`.
-- `.env` — symlink para `../../.env`, gerado por `../setup-env.sh`.
+- `.env` — symlink para `../../.env`, gerado por `scripts/setup-env.sh`.
 
 O estado de autenticação do Tailscale fica em `${CONFIG_HOST_PATH}/tailscale/<serviço>`, como bind mount. Volume nomeado não é usado porque o formulário do CasaOS não sabe importá-lo.
 
-Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `setup-env.sh`.
+Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `scripts/setup-env.sh`.
 
 ## Uso
 
 ```sh
-cd docker
-./setup-env.sh              # cria .env, cria a rede e valida todas as stacks
+# A partir da raiz do repositório:
+./scripts/setup-env.sh      # cria .env, cria a rede e valida todas as stacks
+./scripts/up-all.sh         # sobe todas as stacks
+./scripts/update-all.sh     # baixa imagens novas e atualiza todas as stacks
+./scripts/down-all.sh       # derruba todas as stacks
+
+# Para operar apenas uma stack:
 cd stacks/sonarr
 docker compose up -d
 ```
@@ -50,11 +55,13 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 
 ## Layout de dados
 
-Downloads e mídia entram nos containers como **um único mount**, `${DATA_HOST_PATH}:/data`:
+No host, os downloads ficam em `/DATA/Downloads` e as mídias em `/DATA/media`.
+Os containers que precisam criar hardlinks recebem o pai comum como **um único mount**,
+`${DATA_HOST_PATH}:/data` (com `DATA_HOST_PATH=/DATA`):
 
 ```
 /data
-├── downloads          # destino do qBittorrent
+├── Downloads          # destino do qBittorrent
 └── media
     ├── tv             # root folder do Sonarr
     ├── movies         # root folder do Radarr
@@ -63,6 +70,10 @@ Downloads e mídia entram nos containers como **um único mount**, `${DATA_HOST_
     │   └── inbox      # saida do Shelfarr; Calibre importa daqui (Automatic adding)
     └── audiobooks     # audiobooks do Shelfarr
 ```
+
+No qBittorrent, configure o caminho padrão de salvamento como `/data/Downloads`. Nos apps
+*arr, use `/data/Downloads` para downloads e `/data/media/<biblioteca>` para as root folders.
+Esses caminhos correspondem, respectivamente, a `/DATA/Downloads` e `/DATA/media` no host.
 
 Montar como um só mount é o que permite hardlink entre o download e a biblioteca. Com binds separados (`/downloads` e `/tv`), o `link()` falha com `EXDEV` mesmo estando no mesmo filesystem do host, e todo import vira cópia — dobrando o espaço em disco e quebrando o seeding.
 
