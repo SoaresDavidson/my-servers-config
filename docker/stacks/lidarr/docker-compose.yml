@@ -18,6 +18,11 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep tailscaled"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       - media-network
 
@@ -26,7 +31,8 @@ services:
     container_name: lidarr
     network_mode: service:tailscale-lidarr
     depends_on:
-      - tailscale-lidarr
+      tailscale-lidarr:
+        condition: service_healthy
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -35,6 +41,11 @@ services:
       - ${CONFIG_HOST_PATH}/lidarr/config:/config
       - ${DATA_HOST_PATH}:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8686/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   media-network:

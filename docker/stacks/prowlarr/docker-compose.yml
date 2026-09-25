@@ -18,6 +18,11 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep tailscaled"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       - media-network
 
@@ -26,7 +31,8 @@ services:
     container_name: prowlarr
     network_mode: service:tailscale-prowlarr
     depends_on:
-      - tailscale-prowlarr
+      tailscale-prowlarr:
+        condition: service_healthy
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -34,6 +40,11 @@ services:
     volumes:
       - ${CONFIG_HOST_PATH}/prowlarr/config:/config
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9696/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   media-network:
