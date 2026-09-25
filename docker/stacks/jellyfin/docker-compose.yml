@@ -29,6 +29,8 @@ services:
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
+    labels:
+      - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-jellyfin
     depends_on:
       tailscale-jellyfin:

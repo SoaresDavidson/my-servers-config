@@ -82,6 +82,7 @@ ts_authkey=$(prompt_value 'TS_AUTHKEY' '' true)
 network_name=$(prompt_value 'NETWORK_NAME' 'medianet')
 config_host_path=$(prompt_value 'CONFIG_HOST_PATH' '/DATA/AppData/media-stack')
 data_host_path=$(prompt_value 'DATA_HOST_PATH' '/DATA')
+backup_passphrase=$(prompt_value 'BACKUP_PASSPHRASE (guarde fora do servidor)' '' true)
 
 require_absolute_path 'CONFIG_HOST_PATH' "$config_host_path"
 require_absolute_path 'DATA_HOST_PATH' "$data_host_path"
@@ -95,6 +96,7 @@ TZ=$timezone
 NETWORK_NAME=$network_name
 CONFIG_HOST_PATH=$config_host_path
 DATA_HOST_PATH=$data_host_path
+BACKUP_PASSPHRASE=$backup_passphrase
 EOF
 chmod 600 "$ENV_FILE"
 

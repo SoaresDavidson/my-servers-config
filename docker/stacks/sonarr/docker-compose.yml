@@ -29,6 +29,8 @@ services:
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
+    labels:
+      - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-sonarr
     depends_on:
       tailscale-sonarr:

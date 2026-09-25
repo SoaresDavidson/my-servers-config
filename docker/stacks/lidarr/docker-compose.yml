@@ -29,6 +29,8 @@ services:
   lidarr:
     image: lscr.io/linuxserver/lidarr:latest
     container_name: lidarr
+    labels:
+      - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-lidarr
     depends_on:
       tailscale-lidarr:

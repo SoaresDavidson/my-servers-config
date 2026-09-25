@@ -1,6 +1,6 @@
 # Stacks
 
-Uma stack por serviço. Cada diretório tem:
+Uma stack por serviço (exceto `shared` e `backup`, ver abaixo). Cada diretório tem:
 
 - `docker-compose.yml` — sidecar Tailscale + aplicação (`network_mode: service:tailscale-<svc>`), mais o bloco `x-casaos` que define ícone, título e WebUI no dashboard do CasaOS.
 - `ts-serve.json` — configuração do `tailscale serve`, apontando para a porta da aplicação em `127.0.0.1`.
@@ -52,6 +52,45 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | shelfarr | 5056 | 80 |
 | questarr | 5000 | 5000 |
 | shared (flaresolverr, decluttarr) | — | — |
+| backup (offen/docker-volume-backup, rclone) | — | — |
+
+## Backup
+
+A stack `backup` faz, todo dia às 03:00, um `.tar.zst` criptografado com GPG de `${CONFIG_HOST_PATH}`
+inteiro mais o `docker/.env`. Guarda uma cópia em `${BACKUP_HOST_PATH}` e envia outra ao Google Drive,
+na pasta `media-stack-backups`. Mantém `${BACKUP_RETENTION_DAYS}` dias nos dois lugares.
+
+Durante o backup, os containers com o label `docker-volume-backup.stop-during-backup=true` (as aplicações,
+não os sidecars Tailscale) ficam parados, para os bancos SQLite serem copiados consistentes.
+
+O offen só envia para o Drive via service account, que não tem cota em contas Gmail pessoais. Por isso ele
+envia via WebDAV para o container `rclone`, que grava no Drive com OAuth da própria conta.
+
+### Configuração inicial
+
+1. Defina `BACKUP_PASSPHRASE` no `docker/.env` e guarde a senha também fora do servidor.
+2. Crie o remote `gdrive` do rclone (uma vez). O servidor não tem navegador, então na hora de autenticar
+   responda `n` para *Use web browser* e rode o `rclone authorize` que ele indicar num computador com navegador:
+
+   ```sh
+   docker run --rm -it -v /DATA/AppData/media-stack/rclone:/config/rclone rclone/rclone config
+   # n (new remote) -> name: gdrive -> storage: drive -> client_id/secret: vazio
+   # scope: drive.file (o rclone só enxerga os arquivos que ele mesmo criou)
+   ```
+3. Suba a stack e dispare um backup manual para testar:
+
+   ```sh
+   docker compose -f stacks/backup/docker-compose.yml up -d
+   docker exec backup backup
+   ```
+
+### Restaurar
+
+```sh
+gpg -d media-stack-<data>.tar.zst.gpg | zstd -d | tar -x
+# backup/media-stack/<serviço>/ -> ${CONFIG_HOST_PATH}/<serviço>/   (com o container parado)
+# backup/env/.env               -> docker/.env
+```
 
 ## Layout de dados
 

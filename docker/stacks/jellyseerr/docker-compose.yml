@@ -29,6 +29,8 @@ services:
   jellyseerr:
     image: ghcr.io/seerr-team/seerr:latest
     container_name: jellyseerr
+    labels:
+      - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-jellyseerr
     depends_on:
       tailscale-jellyseerr:

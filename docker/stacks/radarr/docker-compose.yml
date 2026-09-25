@@ -29,6 +29,8 @@ services:
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
+    labels:
+      - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-radarr
     depends_on:
       tailscale-radarr:

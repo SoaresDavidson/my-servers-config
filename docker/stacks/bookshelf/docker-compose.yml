@@ -31,6 +31,8 @@ services:
     # mesma UI e porta, com metadados do Hardcover.
     image: ghcr.io/pennydreadful/bookshelf:hardcover
     container_name: bookshelf
+    labels:
+      - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-bookshelf
     depends_on:
       tailscale-bookshelf:

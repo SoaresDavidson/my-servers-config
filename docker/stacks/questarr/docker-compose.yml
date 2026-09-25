@@ -24,6 +24,8 @@ services:
   questarr:
     image: ghcr.io/doezer/questarr:latest
     container_name: questarr
+    labels:
+      - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-questarr
     depends_on:
       - tailscale-questarr

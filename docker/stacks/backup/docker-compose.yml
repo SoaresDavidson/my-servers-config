@@ -1,0 +1,69 @@
+services:
+  # Ponte WebDAV -> Google Drive. O offen só envia para o Drive por service account,
+  # que não tem cota em contas Gmail pessoais; o rclone usa OAuth da própria conta.
+  # Sem porta publicada e fora da media-network: só o container backup alcança.
+  rclone:
+    image: rclone/rclone:latest
+    container_name: backup_rclone
+    # Sem cache VFS: o PUT só retorna depois de gravado no Drive, então o offen vê falhas de envio.
+    command: serve webdav gdrive:media-stack-backups --addr :8080
+    environment:
+      # O offen exige credenciais no WebDAV. Lidas pelo rclone como --user/--pass.
+      - RCLONE_USER=backup
+      - RCLONE_PASS=${BACKUP_PASSPHRASE:?defina BACKUP_PASSPHRASE no .env}
+    volumes:
+      # rclone.conf com o remote "gdrive". Criado uma vez com `rclone config` (ver README).
+      - ${CONFIG_HOST_PATH}/rclone:/config/rclone
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://backup:$$RCLONE_PASS@localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backup:
+    image: offen/docker-volume-backup:v2
+    container_name: backup
+    depends_on:
+      rclone:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ}
+      - BACKUP_CRON_EXPRESSION=0 3 * * *
+      - BACKUP_FILENAME=media-stack-%Y-%m-%dT%H-%M-%S.{{ .Extension }}
+      - BACKUP_PRUNING_PREFIX=media-stack-
+      - BACKUP_COMPRESSION=zst
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-7}
+      # Conteúdo regenerável, que só aumenta o arquivo.
+      - BACKUP_EXCLUDE_REGEXP=/(cache|transcodes|log|logs|MediaCover)/
+      # O arquivo contém wg0.conf, estado do Tailscale e o .env: nunca sai do servidor sem criptografia.
+      - GPG_PASSPHRASE=${BACKUP_PASSPHRASE:?defina BACKUP_PASSPHRASE no .env}
+      - WEBDAV_URL=http://rclone:8080/
+      - WEBDAV_PATH=/
+      - WEBDAV_USERNAME=backup
+      - WEBDAV_PASSWORD=${BACKUP_PASSPHRASE}
+    volumes:
+      # Para os containers com o label docker-volume-backup.stop-during-backup=true durante o backup.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${CONFIG_HOST_PATH}:/backup/media-stack:ro
+      # O .env tem as senhas e não está no git.
+      - ../../.env:/backup/env/.env:ro
+      # Cópia local, além da do Drive.
+      - ${BACKUP_HOST_PATH:-/DATA/Backups/media-stack}:/archive
+    restart: unless-stopped
+
+x-casaos:
+  main: backup
+  architectures:
+    - amd64
+    - arm64
+  author: SoaresDavidson
+  developer: offen
+  category: Utilities
+  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/rclone.png
+  title:
+    custom: Backup
+  tagline:
+    custom: Backup das configs para o Google Drive
+  description:
+    custom: offen/docker-volume-backup diário, criptografado, com cópia local e envio ao Google Drive via rclone.

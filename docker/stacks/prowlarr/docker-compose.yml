@@ -29,6 +29,8 @@ services:
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
+    labels:
+      - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-prowlarr
     depends_on:
       tailscale-prowlarr:

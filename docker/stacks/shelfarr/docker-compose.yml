@@ -25,6 +25,8 @@ services:
   shelfarr:
     image: ghcr.io/pedro-revez-silva/shelfarr:latest
     container_name: shelfarr
+    labels:
+      - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-shelfarr
     depends_on:
       - tailscale-shelfarr
