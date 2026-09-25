@@ -5,6 +5,11 @@ services:
     environment:
       - TZ=${TZ}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8191/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - media-network
 
@@ -20,6 +25,11 @@ services:
     volumes:
       - ${CONFIG_HOST_PATH}/decluttarr/config:/config
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f decluttarr || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - media-network
 
