@@ -27,16 +27,20 @@ fi
 # Função para verificar se a stack está saudável
 is_stack_healthy() {
   local stack_path=$1
-  # Extrai nomes de containers definidos no compose
-  containers=$(docker compose -f "$stack_path" ps --format "{{.Name}}" 2>/dev/null)
+  # -a inclui containers parados, que devem contar como não saudáveis
+  containers=$(docker compose --env-file "$ENV_FILE" -f "$stack_path" ps -a --format "{{.Name}}" 2>/dev/null)
+  expected=$(docker compose --env-file "$ENV_FILE" -f "$stack_path" config --services 2>/dev/null | wc -l)
 
   if [ -z "$containers" ]; then return 1; fi
+  [ "$(printf '%s\n' "$containers" | wc -l)" -lt "$expected" ] && return 1
 
   for container in $containers; do
-    status=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "unknown")
-    if [ "$status" != "healthy" ]; then
-      return 1
-    fi
+    # Sem healthcheck definido, basta estar rodando
+    status=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null || echo "unknown")
+    case "$status" in
+      healthy|running) ;;
+      *) return 1 ;;
+    esac
   done
   return 0
 }
@@ -63,7 +67,8 @@ log_info "Iniciando stack shared..."
 docker compose --env-file "$ENV_FILE" -f "$STACKS_DIR/shared/docker-compose.yml" up -d
 
 # Aguarda a stack shared ficar saudável
-timeout=60
+# O primeiro healthcheck só roda após o interval (30s), então 60s era apertado
+timeout=120
 elapsed=0
 while ! is_stack_healthy "$STACKS_DIR/shared/docker-compose.yml"; do
   if [ $elapsed -ge $timeout ]; then

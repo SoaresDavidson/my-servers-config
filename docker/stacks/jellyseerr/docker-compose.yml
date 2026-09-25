@@ -42,7 +42,7 @@ services:
       - ${CONFIG_HOST_PATH}/jellyseerr/config:/app/config
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5055/"]
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:5055/api/v1/status"]
       interval: 30s
       timeout: 10s
       retries: 3
