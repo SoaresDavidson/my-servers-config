@@ -1,0 +1,9 @@
+# apt update 10 minutos antes do backup (offen roda às 03:00, ver docker/stacks/backup)
+# e grava a lista de pacotes atualizáveis em /var/lib/host-status/apt-upgradable.txt,
+# montado read-only no hermes em /opt/host (ver docker/stacks/hermes).
+# Instalar: sudo install -m 644 -o root -g root system/cron.d/apt-update /etc/cron.d/apt-update
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+LANG=C.UTF-8
+
+50 2 * * * root apt-get update -qq >> /var/log/apt-update-cron.log 2>&1; mkdir -p /var/lib/host-status && { echo "# pacotes atualizaveis no host, gerado em $(date -Is)"; apt list --upgradable 2>/dev/null | tail -n +2; } > /var/lib/host-status/apt-upgradable.txt.tmp && mv /var/lib/host-status/apt-upgradable.txt.tmp /var/lib/host-status/apt-upgradable.txt
