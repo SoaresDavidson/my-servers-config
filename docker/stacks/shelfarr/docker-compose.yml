@@ -36,7 +36,8 @@ services:
       - TZ=${TZ}
       - SOLID_QUEUE_IN_PUMA=1
     volumes:
-      - ${CONFIG_HOST_PATH}/shelfarr/config:/config
+      # Banco SQLite, chaves e settings ficam em /rails/storage (/config nao e usado pela imagem).
+      - ${CONFIG_HOST_PATH}/shelfarr/storage:/rails/storage
       # Shelfarr move arquivo (nao faz hardlink), entao binds separados nao custam nada aqui.
       - ${DATA_HOST_PATH}/Downloads:/downloads
       - ${DATA_HOST_PATH}/media/books/inbox:/ebooks
