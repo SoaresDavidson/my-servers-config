@@ -4,6 +4,8 @@ services:
     container_name: flaresolverr
     environment:
       - TZ=${TZ}
+      # Nao baixa imagens/CSS/fontes: host antigo, cada pagina custa menos pro Chromium.
+      - DISABLE_MEDIA=true
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8191/ || exit 1"]
