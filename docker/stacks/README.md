@@ -51,6 +51,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | calibre | 8082 (GUI), 8081 (content server), 9090 (dispositivo sem fio) | 8080, 8081, 9090 |
 | shelfarr | 5056 | 80 |
 | questarr | 5000 | 5000 |
+| hermes (Hermes Agent) | 9119 (dashboard), 8642 (API) | 9119, 8642 |
 | shared (flaresolverr, decluttarr) | — | — |
 | backup (offen/docker-volume-backup, rclone) | — | — |
 
