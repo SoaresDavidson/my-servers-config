@@ -116,6 +116,12 @@
         description: Logs dos containers
         server: local
         container: dozzle
+    - AdGuard Home:
+        icon: adguard-home.png
+        href: https://adguard.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        description: DNS com bloqueio de anúncios
+        server: local
+        container: adguard
     - Backup:
         icon: mdi-backup-restore
         description: Backup diário às 03:00
