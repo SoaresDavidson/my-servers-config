@@ -1,0 +1,12 @@
+- resources:
+    cpu: true
+    memory: true
+    uptime: true
+- resources:
+    label: Disco
+    disk: /app/config/logs
+- datetime:
+    text_size: md
+    format:
+      dateStyle: long
+      timeStyle: short

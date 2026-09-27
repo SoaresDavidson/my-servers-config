@@ -1,0 +1,123 @@
+# Links abrem pelo Tailscale (https://<app>.<tailnet>). Widgets falam direto
+# com o sidecar de cada app na rede Docker compartilhada.
+- Mídia:
+    - Jellyfin:
+        icon: jellyfin.png
+        href: https://jellyfin.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        description: Filmes, séries e música
+        server: local
+        container: jellyfin
+    - Jellyseerr:
+        icon: jellyseerr.png
+        href: https://jellyseerr.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        description: Pedidos
+        server: local
+        container: jellyseerr
+        widget:
+          type: jellyseerr
+          url: http://jellyseerr_tailscale:5055
+          key: {{HOMEPAGE_VAR_JELLYSEERR_KEY}}
+    - qBittorrent:
+        icon: qbittorrent.png
+        href: http://{{HOMEPAGE_VAR_HOST_LAN_IP}}:8080
+        description: Downloads (Proton VPN, só LAN)
+        server: local
+        container: qbittorrent
+
+- Busca:
+    - Sonarr:
+        icon: sonarr.png
+        href: https://sonarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        server: local
+        container: sonarr
+        widget:
+          type: sonarr
+          url: http://sonarr_tailscale:8989
+          key: {{HOMEPAGE_VAR_SONARR_KEY}}
+    - Radarr:
+        icon: radarr.png
+        href: https://radarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        server: local
+        container: radarr
+        widget:
+          type: radarr
+          url: http://radarr_tailscale:7878
+          key: {{HOMEPAGE_VAR_RADARR_KEY}}
+    - Lidarr:
+        icon: lidarr.png
+        href: https://lidarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        server: local
+        container: lidarr
+        widget:
+          type: lidarr
+          url: http://lidarr_tailscale:8686
+          key: {{HOMEPAGE_VAR_LIDARR_KEY}}
+    - Bazarr:
+        icon: bazarr.png
+        href: https://bazarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        server: local
+        container: bazarr
+        widget:
+          type: bazarr
+          url: http://bazarr_tailscale:6767
+          key: {{HOMEPAGE_VAR_BAZARR_KEY}}
+    - Prowlarr:
+        icon: prowlarr.png
+        href: https://prowlarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        server: local
+        container: prowlarr
+        widget:
+          type: prowlarr
+          url: http://prowlarr_tailscale:9696
+          key: {{HOMEPAGE_VAR_PROWLARR_KEY}}
+    - Profilarr:
+        icon: profilarr.png
+        href: https://profilarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        server: local
+        container: profilarr
+    - Questarr:
+        icon: mdi-gamepad-variant
+        href: https://questarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        server: local
+        container: questarr
+
+- Livros:
+    - Bookshelf:
+        icon: readarr.png
+        href: https://bookshelf.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        description: Fork do Readarr
+        server: local
+        container: bookshelf
+        widget:
+          type: readarr
+          url: http://bookshelf_tailscale:8787
+          key: {{HOMEPAGE_VAR_BOOKSHELF_KEY}}
+    - Calibre:
+        icon: calibre.png
+        href: https://calibre.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        server: local
+        container: calibre
+    - Shelfarr:
+        icon: mdi-bookshelf
+        href: https://shelfarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        server: local
+        container: shelfarr
+
+- Sistema:
+    - Hermes:
+        icon: mdi-robot
+        href: https://hermes.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        description: Hermes Agent
+        server: local
+        container: hermes
+    - Dozzle:
+        icon: dozzle.png
+        href: http://{{HOMEPAGE_VAR_HOST_LAN_IP}}:8888
+        description: Logs dos containers
+        server: local
+        container: big-bear-dozzle
+    - Backup:
+        icon: mdi-backup-restore
+        description: Backup diário às 03:00
+        server: local
+        container: backup

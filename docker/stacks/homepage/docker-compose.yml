@@ -1,0 +1,94 @@
+services:
+  tailscale-homepage:
+    image: tailscale/tailscale:latest
+    container_name: homepage_tailscale
+    hostname: homepage
+    ports:
+      - "3000:3000"
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - ${CONFIG_HOST_PATH}/tailscale/homepage:/var/lib/tailscale
+      - ./ts-serve.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep tailscaled"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - media-network
+
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    network_mode: service:tailscale-homepage
+    depends_on:
+      tailscale-homepage:
+        condition: service_healthy
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      # Hosts aceitos no header Host: nome no tailnet e acesso direto pela LAN.
+      - HOMEPAGE_ALLOWED_HOSTS=homepage.${TS_DOMAIN},${HOST_LAN_IP}:3000
+      - HOMEPAGE_VAR_TS_DOMAIN=${TS_DOMAIN}
+      - HOMEPAGE_VAR_HOST_LAN_IP=${HOST_LAN_IP}
+      - HOMEPAGE_VAR_SONARR_KEY=${HOMEPAGE_VAR_SONARR_KEY:-}
+      - HOMEPAGE_VAR_RADARR_KEY=${HOMEPAGE_VAR_RADARR_KEY:-}
+      - HOMEPAGE_VAR_LIDARR_KEY=${HOMEPAGE_VAR_LIDARR_KEY:-}
+      - HOMEPAGE_VAR_PROWLARR_KEY=${HOMEPAGE_VAR_PROWLARR_KEY:-}
+      - HOMEPAGE_VAR_BOOKSHELF_KEY=${HOMEPAGE_VAR_BOOKSHELF_KEY:-}
+      - HOMEPAGE_VAR_BAZARR_KEY=${HOMEPAGE_VAR_BAZARR_KEY:-}
+      - HOMEPAGE_VAR_JELLYSEERR_KEY=${HOMEPAGE_VAR_JELLYSEERR_KEY:-}
+    volumes:
+      # Config versionada no repositório; logs ficam fora dele.
+      - ./config:/app/config
+      - ${CONFIG_HOST_PATH}/homepage/logs:/app/config/logs
+    restart: unless-stopped
+
+  # Homepage só lê o estado dos containers. O proxy expõe apenas a API de
+  # listagem, em vez de montar o docker.sock (root no host) no dashboard.
+  homepage-docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: homepage_docker_proxy
+    environment:
+      - CONTAINERS=1
+      - POST=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      - media-network
+
+networks:
+  media-network:
+    name: ${NETWORK_NAME}
+    external: true
+
+
+x-casaos:
+  main: tailscale-homepage
+  architectures:
+    - amd64
+    - arm64
+  author: SoaresDavidson
+  developer: gethomepage
+  category: Utilities
+  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/homepage.png
+  scheme: http
+  port_map: "3000"
+  index: /
+  title:
+    custom: Homepage
+  tagline:
+    custom: Dashboard dos apps atras de Tailscale
+  description:
+    custom: Homepage exposto pela sidecar Tailscale, com status via docker-socket-proxy.

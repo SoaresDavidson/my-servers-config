@@ -1,0 +1,20 @@
+title: JesseJamesServer
+language: pt-BR
+theme: dark
+color: slate
+headerStyle: clean
+statusStyle: dot
+hideVersion: true
+layout:
+  Mídia:
+    style: row
+    columns: 3
+  Busca:
+    style: row
+    columns: 4
+  Livros:
+    style: row
+    columns: 4
+  Sistema:
+    style: row
+    columns: 4
