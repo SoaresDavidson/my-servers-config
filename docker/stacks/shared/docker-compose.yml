@@ -18,14 +18,38 @@ services:
   decluttarr:
     image: ghcr.io/manimatter/decluttarr:latest
     container_name: decluttarr
+    # Configurado todo por env (decluttarr v2). As chaves reaproveitam as HOMEPAGE_VAR_*
+    # do .env (scripts/homepage-keys.sh). Os *arr ficam atras da sidecar Tailscale, entao
+    # o host na rede Docker e o container_name da sidecar.
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - DECLUTTARR_CRON=*/15 * * * *
-      # Chaves de API dos *arr precisam ser adicionadas manualmente depois do setup.
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      # Minutos entre execucoes.
+      TIMER: 15
+      REMOVE_BAD_FILES: True
+      REMOVE_FAILED_DOWNLOADS: True
+      REMOVE_FAILED_IMPORTS: True
+      REMOVE_METADATA_MISSING: True
+      REMOVE_MISSING_FILES: True
+      REMOVE_ORPHANS: True
+      REMOVE_SLOW: True
+      REMOVE_STALLED: True
+      REMOVE_UNMONITORED: True
+      SONARR: >
+        [{"base_url": "http://sonarr_tailscale:8989", "api_key": "${HOMEPAGE_VAR_SONARR_KEY}"}]
+      RADARR: >
+        [{"base_url": "http://radarr_tailscale:7878", "api_key": "${HOMEPAGE_VAR_RADARR_KEY}"}]
+      LIDARR: >
+        [{"base_url": "http://lidarr_tailscale:8686", "api_key": "${HOMEPAGE_VAR_LIDARR_KEY}"}]
+      # Bookshelf e um fork do Readarr, mesma API.
+      READARR: >
+        [{"base_url": "http://bookshelf_tailscale:8787", "api_key": "${HOMEPAGE_VAR_BOOKSHELF_KEY}"}]
+      QBITTORRENT: >
+        [{"base_url": "http://qbittorrent:8080", "username": "${QBITTORRENT_USERNAME}", "password": "${QBITTORRENT_PASSWORD}"}]
     volumes:
-      - ${CONFIG_HOST_PATH}/decluttarr/config:/config
+      # Mesmo /data dos *arr, so leitura, para o job detect_deletions enxergar a biblioteca.
+      - ${DATA_HOST_PATH}:/data:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f decluttarr || exit 1"]
