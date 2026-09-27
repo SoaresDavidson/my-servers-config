@@ -80,6 +80,8 @@ timezone=$(suggest_timezone)
 
 ts_authkey=$(prompt_value 'TS_AUTHKEY' '' true)
 network_name=$(prompt_value 'NETWORK_NAME' 'medianet')
+network_subnet=$(prompt_value 'NETWORK_SUBNET' '172.22.0.0/16')
+network_gateway=$(prompt_value 'NETWORK_GATEWAY' '172.22.0.1')
 config_host_path=$(prompt_value 'CONFIG_HOST_PATH' '/DATA/AppData/media-stack')
 data_host_path=$(prompt_value 'DATA_HOST_PATH' '/DATA')
 backup_passphrase=$(prompt_value 'BACKUP_PASSPHRASE (guarde fora do servidor)' '' true)
@@ -94,6 +96,8 @@ PUID=$puid
 PGID=$pgid
 TZ=$timezone
 NETWORK_NAME=$network_name
+NETWORK_SUBNET=$network_subnet
+NETWORK_GATEWAY=$network_gateway
 CONFIG_HOST_PATH=$config_host_path
 DATA_HOST_PATH=$data_host_path
 BACKUP_PASSPHRASE=$backup_passphrase
@@ -105,8 +109,10 @@ for stack in "$STACKS_DIR"/*/; do
 done
 
 if ! docker network inspect "$network_name" >/dev/null 2>&1; then
-  docker network create "$network_name" >/dev/null
+  docker network create --subnet "$network_subnet" --gateway "$network_gateway" "$network_name" >/dev/null
   printf '%s\n' "rede $network_name criada."
+elif [ "$(docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' "$network_name")" != "$network_gateway" ]; then
+  printf '%s\n' "aviso: a rede $network_name existe com gateway diferente de $network_gateway. Recrie-a ou ajuste NETWORK_GATEWAY." >&2
 fi
 
 for stack in "$STACKS_DIR"/*/; do

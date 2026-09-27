@@ -26,6 +26,11 @@ services:
       - VPN_AUTO_PORT_FORWARD=true
       - VPN_HEALTHCHECK_ENABLED=true
       - PRIVOXY_ENABLED=false
+    # O unbound do modo VPN nao consulta o DNS do Docker, entao "prowlarr" nao resolve e
+    # URLs de download vindas do Questarr falham. Aponta para o gateway da medianet, onde
+    # a porta 9696 do Prowlarr esta publicada.
+    extra_hosts:
+      - "prowlarr:${NETWORK_GATEWAY}"
     volumes:
       - ${CONFIG_HOST_PATH}/qbittorrent/config:/config
       - ${DATA_HOST_PATH}:/data
