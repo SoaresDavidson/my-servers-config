@@ -1,0 +1,12 @@
+// Overrides locais do 50unattended-upgrades (que vem do pacote e não é editado).
+// Só instala pacotes das origens Debian padrão (trixie, trixie-updates, trixie-security);
+// docker, tailscale e cuda vêm de repos de terceiros e continuam manuais.
+// O upgrade roda às 04:00 (ver system/systemd/apt-daily-upgrade.timer.d), depois do backup
+// das 03:00, e o reboot só acontece se o upgrade criar /var/run/reboot-required.
+// Instalar: sudo install -m 644 -o root -g root system/apt.conf.d/52unattended-upgrades-local /etc/apt/apt.conf.d/52unattended-upgrades-local
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+Unattended-Upgrade::Automatic-Reboot-Time "04:30";
+Unattended-Upgrade::SyslogEnable "true";

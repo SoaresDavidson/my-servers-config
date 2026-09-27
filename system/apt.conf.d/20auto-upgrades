@@ -1,0 +1,5 @@
+// Liga o unattended-upgrades via apt-daily-upgrade.timer.
+// Instalar: sudo install -m 644 -o root -g root system/apt.conf.d/20auto-upgrades /etc/apt/apt.conf.d/20auto-upgrades
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::AutocleanInterval "7";
