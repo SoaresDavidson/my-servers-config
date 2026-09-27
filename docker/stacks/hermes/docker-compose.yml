@@ -40,6 +40,8 @@ services:
     environment:
       - TZ=${TZ}
       - OPENAI_API_KEY=${HERMES_OPENAI_API_KEY}
+      # PAT usado pelo MCP server do GitHub (mcp_servers.github no config.yaml).
+      - GITHUB_MCP_PAT=${GITHUB_MCP_PAT}
       # Dashboard web na 9119. Desde a imagem latest (set/2026) o HERMES_DASHBOARD_INSECURE
       # foi removido e o dashboard recusa subir em 0.0.0.0 sem um provedor de auth.
       - HERMES_DASHBOARD=1
