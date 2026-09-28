@@ -122,6 +122,11 @@
         description: DNS com bloqueio de anúncios
         server: local
         container: adguard
+        widget:
+          type: adguard
+          url: http://adguard_tailscale:80
+          username: {{HOMEPAGE_VAR_ADGUARD_USER}}
+          password: {{HOMEPAGE_VAR_ADGUARD_PASSWORD}}
     - Backup:
         icon: mdi-backup-restore
         description: Backup diário às 03:00

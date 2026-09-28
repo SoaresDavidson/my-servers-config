@@ -48,6 +48,8 @@ services:
       - HOMEPAGE_VAR_BOOKSHELF_KEY=${HOMEPAGE_VAR_BOOKSHELF_KEY:-}
       - HOMEPAGE_VAR_BAZARR_KEY=${HOMEPAGE_VAR_BAZARR_KEY:-}
       - HOMEPAGE_VAR_JELLYSEERR_KEY=${HOMEPAGE_VAR_JELLYSEERR_KEY:-}
+      - HOMEPAGE_VAR_ADGUARD_USER=${HOMEPAGE_VAR_ADGUARD_USER:-}
+      - HOMEPAGE_VAR_ADGUARD_PASSWORD=${HOMEPAGE_VAR_ADGUARD_PASSWORD:-}
     volumes:
       # Config versionada no repositório; logs ficam fora dele.
       - ./config:/app/config
