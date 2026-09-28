@@ -1,0 +1,48 @@
+services:
+  clamav:
+    image: clamav/clamav:stable
+    container_name: clamav
+    # Loop próprio em vez do /init da imagem: sem clamd residente, só clamscan periódico.
+    entrypoint: ["/scan.sh"]
+    environment:
+      - TZ=${TZ}
+      # Segundos entre scans incrementais. O freshclam roda junto, e o mirror pede no máximo 1x/hora.
+      - SCAN_INTERVAL=3600
+      # Dias entre scans completos (0 desliga).
+      - FULL_SCAN_DAYS=7
+      # Arquivos maiores são pulados. O ClamAV não escaneia além de 2 GiB.
+      - MAX_FILESIZE=2000M
+    volumes:
+      - ./scan.sh:/scan.sh:ro
+      - ./freshclam.conf:/etc/clamav/freshclam.conf:ro
+      # A base (~300 MB) fica em cache/, que o backup ignora. Marcadores e infected.log ficam fora.
+      - ${CONFIG_HOST_PATH}/clamav/cache/db:/var/lib/clamav
+      - ${CONFIG_HOST_PATH}/clamav:/state
+      # Somente leitura: o scan só reporta, não apaga nem move nada.
+      - ${DATA_HOST_PATH}:/data:ro
+    # Um scan completo não deve disputar CPU com o Jellyfin.
+    cpu_shares: 256
+    restart: unless-stopped
+    networks:
+      - media-network
+
+networks:
+  media-network:
+    name: ${NETWORK_NAME}
+    external: true
+
+x-casaos:
+  main: clamav
+  architectures:
+    - amd64
+    - arm64
+  author: SoaresDavidson
+  developer: cisco-talos
+  category: Utilities
+  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/clamav.png
+  title:
+    custom: ClamAV
+  tagline:
+    custom: Antivírus dos downloads
+  description:
+    custom: clamscan periódico e somente leitura em /data, com resultados no log do container.

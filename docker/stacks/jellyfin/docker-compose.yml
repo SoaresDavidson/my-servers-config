@@ -41,7 +41,9 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_HOST_PATH}/jellyfin/config:/config
-      - ${DATA_HOST_PATH}/media:/data/media
+      # Somente leitura: um arquivo malicioso que explore o ffmpeg não consegue mexer na biblioteca.
+      # Exige "Salvar metadados/legendas junto da mídia" desligado nas bibliotecas (vão para /config).
+      - ${DATA_HOST_PATH}/media:/data/media:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8096/"]

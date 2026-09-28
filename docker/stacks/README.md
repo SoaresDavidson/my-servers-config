@@ -56,6 +56,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | dozzle (logs dos containers) | 8888 | 8080 |
 | adguard (DNS com bloqueio de anúncios) | 3080 (web), 53 tcp/udp no `HOST_LAN_IP` (DNS) | 80, 53 |
 | shared (flaresolverr, decluttarr) | — | — |
+| clamav (antivírus dos downloads) | — | — |
 | backup (offen/docker-volume-backup, rclone) | — | — |
 
 ## Backup
@@ -96,6 +97,25 @@ gpg -d media-stack-<data>.tar.zst.gpg | zstd -d | tar -x
 # backup/env/.env               -> docker/.env
 ```
 
+## Proteção contra malware nos downloads
+
+Quatro camadas, da mais barata à mais cara:
+
+1. **qBittorrent** — `scripts/qbittorrent-exclusions.sh` grava via WebAPI a lista de *Excluded file names*:
+   atalhos, protetores de tela e scripts do Windows Script Host (`.lnk`, `.url`, `.scr`, `.vbs`...), que não
+   têm uso legítimo. A lista vale para todas as categorias, então `.exe` e compactados não entram por causa
+   da categoria `game` (Questarr).
+2. **Decluttarr** (stack `shared`) — nas categorias dos *arr, `REMOVE_BAD_FILES` desmarca no qBittorrent
+   tudo que não é mídia (inclusive `.exe` e `.rar`) e manda o release para a blocklist; `REMOVE_FAILED_IMPORTS`
+   remove o que o *arr recusou importar, como "Found executable file".
+3. **ClamAV** (stack `clamav`) — `clamscan` de hora em hora nos arquivos de `/data` com ctime novo, e completo
+   a cada 7 dias. Vídeo, áudio, legenda e imagem ficam de fora. Montado `:ro`: só reporta. Achados aparecem no
+   log do container (Dozzle, procure `ALERTA`) e em `${CONFIG_HOST_PATH}/clamav/infected.log`.
+   Arquivos acima de 2 GiB não são escaneados (limite do ClamAV).
+4. **Isolamento** — containers sem root (`PUID`/`PGID`), Jellyfin com a biblioteca `:ro`, qBittorrent atrás
+   da VPN. Nada baixado é executado no servidor; jogos, só depois de checar o hash no VirusTotal e de preferência
+   numa VM.
+
 ## Layout de dados
 
 No host, os downloads ficam em `/DATA/Downloads` e as mídias em `/DATA/media`.
@@ -121,5 +141,7 @@ Esses caminhos correspondem, respectivamente, a `/DATA/Downloads` e `/DATA/media
 Montar como um só mount é o que permite hardlink entre o download e a biblioteca. Com binds separados (`/downloads` e `/tv`), o `link()` falha com `EXDEV` mesmo estando no mesmo filesystem do host, e todo import vira cópia — dobrando o espaço em disco e quebrando o seeding.
 
 Jellyfin, Bazarr e Calibre recebem só `${DATA_HOST_PATH}/media:/data/media`, já que não precisam enxergar os downloads.
+No Jellyfin o mount é `:ro`; por isso as bibliotecas estão com *salvar metadados* e *salvar legendas junto da mídia*
+desligados, e isso fica em `/config`.
 
 Shelfarr é exceção: usa binds separados (`/downloads`, `/ebooks`, `/audiobooks`) porque a imagem espera esses caminhos e move o arquivo em vez de fazer hardlink.

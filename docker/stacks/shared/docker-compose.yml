@@ -27,8 +27,10 @@ services:
       TZ: ${TZ}
       # Minutos entre execucoes.
       TIMER: 15
+      # Desmarca no qBittorrent o que não é mídia (.exe, .lnk, .rar...) e põe o release na blocklist.
       REMOVE_BAD_FILES: True
       REMOVE_FAILED_DOWNLOADS: True
+      # Sem message_patterns: vale para toda recusa de import, inclusive "Found executable file".
       REMOVE_FAILED_IMPORTS: True
       REMOVE_METADATA_MISSING: True
       REMOVE_MISSING_FILES: True
