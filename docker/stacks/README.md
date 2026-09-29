@@ -118,9 +118,9 @@ Quatro camadas, da mais barata à mais cara:
 
 ## Layout de dados
 
-No host, os downloads ficam em `/DATA/Downloads` e as mídias em `/DATA/media`.
+No host, os downloads ficam em `/mnt/midia/Downloads` e as mídias em `/mnt/midia/media`, num HD dedicado.
 Os containers que precisam criar hardlinks recebem o pai comum como **um único mount**,
-`${DATA_HOST_PATH}:/data` (com `DATA_HOST_PATH=/DATA`):
+`${DATA_HOST_PATH}:/data` (com `DATA_HOST_PATH=/mnt/midia`):
 
 ```
 /data
@@ -136,7 +136,7 @@ Os containers que precisam criar hardlinks recebem o pai comum como **um único 
 
 No qBittorrent, configure o caminho padrão de salvamento como `/data/Downloads`. Nos apps
 *arr, use `/data/Downloads` para downloads e `/data/media/<biblioteca>` para as root folders.
-Esses caminhos correspondem, respectivamente, a `/DATA/Downloads` e `/DATA/media` no host.
+Esses caminhos correspondem, respectivamente, a `/mnt/midia/Downloads` e `/mnt/midia/media` no host.
 
 Montar como um só mount é o que permite hardlink entre o download e a biblioteca. Com binds separados (`/downloads` e `/tv`), o `link()` falha com `EXDEV` mesmo estando no mesmo filesystem do host, e todo import vira cópia — dobrando o espaço em disco e quebrando o seeding.
 

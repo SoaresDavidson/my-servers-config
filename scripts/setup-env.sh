@@ -83,7 +83,7 @@ network_name=$(prompt_value 'NETWORK_NAME' 'medianet')
 network_subnet=$(prompt_value 'NETWORK_SUBNET' '172.22.0.0/16')
 network_gateway=$(prompt_value 'NETWORK_GATEWAY' '172.22.0.1')
 config_host_path=$(prompt_value 'CONFIG_HOST_PATH' '/DATA/AppData/media-stack')
-data_host_path=$(prompt_value 'DATA_HOST_PATH' '/DATA')
+data_host_path=$(prompt_value 'DATA_HOST_PATH' '/mnt/midia')
 backup_passphrase=$(prompt_value 'BACKUP_PASSPHRASE (guarde fora do servidor)' '' true)
 
 require_absolute_path 'CONFIG_HOST_PATH' "$config_host_path"

@@ -11,12 +11,12 @@
 #   ./kindle-send.sh <pasta-no-servidor> [opcoes]
 #
 # Exemplo:
-#   ./kindle-send.sh /DATA/Media/media/books/inbox
+#   ./kindle-send.sh /mnt/midia/media/books/inbox
 #
 # Opcoes:
 #   -s, --server USER@HOST   Destino SSH do servidor (padrao: davi@192.168.100.35)
 #   -c, --container NOME     Container do Calibre (padrao: calibre)
-#   -m, --map HOST:CONT      Mapeamento do volume (padrao: /DATA/Media/media:/data/media)
+#   -m, --map HOST:CONT      Mapeamento do volume (padrao: /mnt/midia/media:/data/media)
 #   -d, --dest SUBPASTA      Subpasta no Kindle (padrao: documents)
 #   -l, --label ROTULO       Rotulo da particao do Kindle (padrao: Kindle)
 #   -f, --force              Reenvia livros que ja estao no Kindle
@@ -31,7 +31,7 @@ NATIVAS="epub pdf mobi azw3 fb2 djvu cbz cbr txt html htm chm"
 
 SERVIDOR="davi@192.168.100.35"
 CONTAINER="calibre"
-MAPEAMENTO="/DATA/Media/media:/data/media"
+MAPEAMENTO="/mnt/midia/media:/data/media"
 DEST_SUB="documents"
 LABEL="Kindle"
 FORCE=0
