@@ -1,0 +1,11 @@
+# Para o HD de mídia (/mnt/midia) depois de 20 min sem I/O. O HD é USB (Seagate Expansion Desk), e o
+# `hdparm -S` não costuma passar pela ponte USB; o hd-idle mede a inatividade em /proc/diskstats e manda
+# o comando de parada ele mesmo (-c scsi). O SSD interno fica de fora (-i 0 desliga o padrão para os
+# outros discos). -s 1 resolve o symlink by-id de novo se o HD reconectar com outra letra (sdX).
+# Enquanto o qBittorrent estiver semeando, o HD não para: isso é esperado.
+# Instalar (o apt já sobe o serviço com o arquivo padrão, que sai na hora; o Restart=always da unit
+# esgota o limite de partidas e o systemd recusa o restart até o reset-failed):
+#   sudo apt install hd-idle
+#   sudo install -m 644 -o root -g root system/default/hd-idle /etc/default/hd-idle
+#   sudo systemctl reset-failed hd-idle; sudo systemctl enable hd-idle && sudo systemctl restart hd-idle
+HD_IDLE_OPTS="-i 0 -s 1 -a /dev/disk/by-id/usb-Seagate_Expansion_Desk_2HC015KJ-0:0 -i 1200 -c scsi -l /var/log/hd-idle.log"

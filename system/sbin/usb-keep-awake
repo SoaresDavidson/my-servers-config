@@ -1,0 +1,20 @@
+#!/bin/sh
+# Desfaz o autosuspend USB que o `powertop --auto-tune` liga, nos dispositivos USB de que o servidor
+# depende: o HD de mídia e, se voltar a ser usado, o adaptador de rede USB do dock (reserva; a rede
+# principal é o adaptador Thunderbolt ens9, que é PCIe e fica fora do autosuspend USB). Com autosuspend,
+# eles podem cair e voltar sozinhos, e aí o /mnt/midia ou a rede somem por alguns segundos.
+# Roda logo depois do powertop (ver systemd/powertop.service.d/override.conf).
+# Instalar:
+#   sudo install -m 755 -o root -g root system/sbin/usb-keep-awake /usr/local/sbin/usb-keep-awake
+set -eu
+
+# idVendor:idProduct
+KEEP="0bc2:3322 0bda:8153" # Seagate Expansion Desk (HD de mídia), Realtek RTL8153 (rede do dock)
+
+for dev in /sys/bus/usb/devices/*; do
+  [ -f "$dev/idVendor" ] || continue
+  id="$(cat "$dev/idVendor"):$(cat "$dev/idProduct")"
+  case " $KEEP " in
+    *" $id "*) echo on > "$dev/power/control" ;;
+  esac
+done
