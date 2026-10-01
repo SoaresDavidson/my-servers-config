@@ -25,6 +25,7 @@ services:
     image: santiagosayshey/profilarr:latest
     container_name: profilarr
     labels:
+      - autoheal=true
       - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-profilarr
     depends_on:
@@ -34,6 +35,11 @@ services:
     volumes:
       - ${CONFIG_HOST_PATH}/profilarr/config:/config
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -qO /dev/null http://127.0.0.1:6868/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   media-network:

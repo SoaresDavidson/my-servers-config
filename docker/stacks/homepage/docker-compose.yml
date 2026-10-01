@@ -29,6 +29,8 @@ services:
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
+    labels:
+      - autoheal=true
     network_mode: service:tailscale-homepage
     depends_on:
       tailscale-homepage:
@@ -55,6 +57,11 @@ services:
       - ./config:/app/config
       - ${CONFIG_HOST_PATH}/homepage/logs:/app/config/logs
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -qO /dev/null http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Homepage só lê o estado dos containers. O proxy expõe apenas a API de
   # listagem, em vez de montar o docker.sock (root no host) no dashboard.

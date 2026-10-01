@@ -30,6 +30,7 @@ services:
     image: lscr.io/linuxserver/lidarr:latest
     container_name: lidarr
     labels:
+      - autoheal=true
       - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-lidarr
     depends_on:
@@ -44,7 +45,7 @@ services:
       - ${DATA_HOST_PATH}:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8686/"]
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -f http://localhost:8686/"]
       interval: 30s
       timeout: 10s
       retries: 3

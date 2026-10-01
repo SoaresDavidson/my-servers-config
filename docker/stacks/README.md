@@ -10,6 +10,8 @@ O estado de autenticação do Tailscale fica em `${CONFIG_HOST_PATH}/tailscale/<
 
 Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `scripts/setup-env.sh`.
 
+Se a sidecar reinicia depois do app (boot lento, por exemplo), o app fica preso num network namespace órfão, só com `lo`, e para de responder pela LAN e pelo tailnet. Por isso o healthcheck de cada app começa com `test -e /sys/class/net/eth0`, e o label `autoheal=true` deixa o `autoheal` (stack `shared`) reiniciar o app, que volta já no namespace atual da sidecar. O dozzle fica de fora: a imagem não tem shell para esse teste.
+
 ## Uso
 
 ```sh
@@ -55,7 +57,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | homepage (dashboard dos apps) | 3000 | 3000 |
 | dozzle (logs dos containers) | 8888 | 8080 |
 | adguard (DNS com bloqueio de anúncios) | 3080 (web), 53 tcp/udp no `HOST_LAN_IP` (DNS) | 80, 53 |
-| shared (flaresolverr, decluttarr) | — | — |
+| shared (flaresolverr, decluttarr, autoheal) | — | — |
 | clamav (antivírus dos downloads) | — | — |
 | backup (offen/docker-volume-backup, rclone) | — | — |
 

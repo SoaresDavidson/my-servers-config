@@ -26,6 +26,7 @@ services:
     image: ghcr.io/pedro-revez-silva/shelfarr:latest
     container_name: shelfarr
     labels:
+      - autoheal=true
       - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-shelfarr
     depends_on:
@@ -43,6 +44,11 @@ services:
       - ${DATA_HOST_PATH}/media/books/inbox:/ebooks
       - ${DATA_HOST_PATH}/media/audiobooks:/audiobooks
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -fs -o /dev/null http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   media-network:

@@ -32,6 +32,7 @@ services:
     image: ghcr.io/pennydreadful/bookshelf:hardcover
     container_name: bookshelf
     labels:
+      - autoheal=true
       - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-bookshelf
     depends_on:
@@ -46,7 +47,7 @@ services:
       - ${DATA_HOST_PATH}:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost:8787/ping"]
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -fs http://localhost:8787/ping"]
       interval: 30s
       timeout: 10s
       retries: 3

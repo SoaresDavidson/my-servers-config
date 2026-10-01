@@ -61,6 +61,25 @@ services:
     networks:
       - media-network
 
+  autoheal:
+    image: willfarrell/autoheal:latest
+    container_name: autoheal
+    # Reinicia containers com label autoheal=true que ficarem unhealthy. Caso principal: app com
+    # network_mode service:<sidecar> que perdeu a rede porque a sidecar Tailscale reiniciou depois
+    # dele (ex.: boot lento) e o deixou num network namespace orfao, so com lo. O healthcheck dos
+    # apps testa /sys/class/net/eth0 para detectar isso.
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: autoheal
+      AUTOHEAL_INTERVAL: 30
+      # Folga para o boot: nao age nos primeiros minutos, enquanto as sidecars ainda sobem.
+      AUTOHEAL_START_PERIOD: 300
+      TZ: ${TZ}
+    volumes:
+      # Precisa da API de restart (o :ro so impede trocar o arquivo do socket, nao limita a API).
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    network_mode: none
+
 networks:
   media-network:
     name: ${NETWORK_NAME}

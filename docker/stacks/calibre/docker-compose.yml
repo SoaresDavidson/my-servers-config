@@ -35,6 +35,7 @@ services:
     image: lscr.io/linuxserver/calibre:latest
     container_name: calibre
     labels:
+      - autoheal=true
       - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-calibre
     depends_on:
@@ -50,7 +51,7 @@ services:
     shm_size: "1gb"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/"]
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -f http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 3

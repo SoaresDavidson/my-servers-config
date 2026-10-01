@@ -30,6 +30,7 @@ services:
     image: ghcr.io/seerr-team/seerr:latest
     container_name: jellyseerr
     labels:
+      - autoheal=true
       - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-jellyseerr
     depends_on:
@@ -44,7 +45,7 @@ services:
       - ${CONFIG_HOST_PATH}/jellyseerr/config:/app/config
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:5055/api/v1/status"]
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -qO /dev/null http://localhost:5055/api/v1/status"]
       interval: 30s
       timeout: 10s
       retries: 3

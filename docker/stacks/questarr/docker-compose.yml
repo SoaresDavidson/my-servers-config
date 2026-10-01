@@ -25,6 +25,7 @@ services:
     image: ghcr.io/doezer/questarr:latest
     container_name: questarr
     labels:
+      - autoheal=true
       - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-questarr
     depends_on:
@@ -34,6 +35,11 @@ services:
     volumes:
       - ${CONFIG_HOST_PATH}/questarr/data:/app/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -qO /dev/null http://127.0.0.1:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   media-network:

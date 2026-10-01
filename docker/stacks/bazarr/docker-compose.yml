@@ -30,6 +30,7 @@ services:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
     labels:
+      - autoheal=true
       - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-bazarr
     depends_on:
@@ -44,7 +45,7 @@ services:
       - ${DATA_HOST_PATH}/media:/data/media
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6767/"]
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -f http://localhost:6767/"]
       interval: 30s
       timeout: 10s
       retries: 3

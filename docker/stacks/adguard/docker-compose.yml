@@ -34,6 +34,8 @@ services:
     image: adguard/adguardhome:latest
     container_name: adguard
     # Sem o label docker-volume-backup.stop-during-backup: parar o DNS às 03:00 derrubaria a rede.
+    labels:
+      - autoheal=true
     network_mode: service:tailscale-adguard
     depends_on:
       tailscale-adguard:
@@ -44,7 +46,7 @@ services:
     restart: unless-stopped
     healthcheck:
       # Interface web na porta 80, padrão do assistente inicial.
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -q --spider http://127.0.0.1:80/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

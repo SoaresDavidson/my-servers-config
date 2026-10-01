@@ -30,6 +30,7 @@ services:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
     labels:
+      - autoheal=true
       - docker-volume-backup.stop-during-backup=true
     network_mode: service:tailscale-jellyfin
     depends_on:
@@ -46,7 +47,7 @@ services:
       - ${DATA_HOST_PATH}/media:/data/media:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8096/"]
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -f http://localhost:8096/"]
       interval: 30s
       timeout: 10s
       retries: 3
