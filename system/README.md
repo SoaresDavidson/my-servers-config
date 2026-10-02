@@ -12,6 +12,35 @@ Configurações do host (Debian 13) fora do Docker. Cada arquivo é copiado para
 | `default/` | `hd-idle` | `/etc/default/hd-idle` | Para o HD de mídia depois de 20 min sem I/O. Requer o pacote `hd-idle`. |
 | `systemd/powertop.service.d/` | `override.conf` | `/etc/systemd/system/powertop.service.d/override.conf` | Roda `powertop --auto-tune` no boot e depois `usb-keep-awake`. Requer `systemctl daemon-reload`. |
 | `sbin/` | `usb-keep-awake` | `/usr/local/sbin/usb-keep-awake` | Tira do autosuspend USB o HD de mídia e o adaptador de rede do dock (RTL8153, reserva), que o powertop teria colocado para dormir. |
+| `systemd/` | `hermes-gateway-471fd707.service` | `/etc/systemd/system/hermes-gateway-471fd707.service` | Gateway do Hermes Agent direto no host, com `User=davi`. Ver [Hermes](#hermes). |
+
+## Hermes
+
+O Hermes Agent saiu do Docker e roda no host: código em `~/hermes-agent` (instalado com `./setup-hermes.sh`,
+comando em `~/.local/bin/hermes`) e dados em `HERMES_HOME=/DATA/AppData/media-stack/hermes/data`
+(exportado no `~/.zshrc`). As credenciais do Discord e outras variáveis necessárias ao gateway
+ficam em `$HERMES_HOME/.env` (fora do repo); a autenticação Codex fica no `auth.json` do Hermes.
+Para ativar o dashboard fora do Docker, configure-o separadamente, considerando a exposição da porta 9119.
+
+A unit é gerada pelo próprio Hermes e precisa ficar **idêntica** ao que ele gera: `hermes gateway status`
+compara o arquivo instalado com o gerado e acusa "desatualizada" por qualquer diferença, até comentários.
+Por isso o arquivo não tem o cabeçalho de instalação dos outros. O hash no nome também vem do Hermes.
+
+```bash
+sudo install -D -m 644 -o root -g root system/systemd/hermes-gateway-471fd707.service /etc/systemd/system/hermes-gateway-471fd707.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now hermes-gateway-471fd707.service
+journalctl -u hermes-gateway-471fd707 -f
+```
+
+Se o Hermes atualizar node/npm em `tools/` e o status acusar unit desatualizada, regenere com
+`sudo HERMES_HOME=$HERMES_HOME hermes gateway install --system --run-as-user davi --force` e copie
+`/etc/systemd/system/hermes-gateway-471fd707.service` de volta para cá.
+
+O `scripts/up-all.sh` ignora a stack `docker/stacks/hermes`; não a suba manualmente. Mantenha apenas
+um gateway ativo: se o serviço de usuário antigo estiver habilitado, desative-o com
+`systemctl --user disable --now hermes-gateway-471fd707.service` e confira o serviço de sistema com
+`hermes gateway status --system`. Dois gateways no mesmo bot do Discord disputam as mensagens.
 
 ## Energia
 

@@ -86,6 +86,11 @@ failed_stacks=""
 for stack_dir in "$STACKS_DIR"/*/; do
   name=$(basename "$stack_dir")
   [ "$name" = shared ] && continue
+  # Hermes foi migrado para o systemd no host; não iniciar o gateway antigo no Docker.
+  if [ "$name" = hermes ]; then
+    log_info "Stack hermes ignorada (gateway gerenciado pelo systemd no host)."
+    continue
+  fi
 
   compose_file="$stack_dir/docker-compose.yml"
   [ ! -f "$compose_file" ] && continue
