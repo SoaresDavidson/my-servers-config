@@ -1,0 +1,75 @@
+services:
+  tailscale-koinsight:
+    image: tailscale/tailscale:latest
+    container_name: koinsight_tailscale
+    hostname: koinsight
+    ports:
+      # 3000 no host ja e do homepage.
+      - "3001:3000"
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - ${CONFIG_HOST_PATH}/tailscale/koinsight:/var/lib/tailscale
+      - ./ts-serve.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep tailscaled"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - media-network
+
+  koinsight:
+    image: ghcr.io/ko-insight/koinsight:latest
+    container_name: koinsight
+    labels:
+      - autoheal=true
+      - docker-volume-backup.stop-during-backup=true
+    network_mode: service:tailscale-koinsight
+    depends_on:
+      tailscale-koinsight:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_HOST_PATH}/koinsight:/app/data
+    restart: unless-stopped
+    healthcheck:
+      # Imagem Alpine: tem wget, nao curl.
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -q -O /dev/null http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  media-network:
+    name: ${NETWORK_NAME}
+    external: true
+
+
+x-casaos:
+  main: tailscale-koinsight
+  architectures:
+    - amd64
+    - arm64
+  author: SoaresDavidson
+  developer: ko-insight
+  category: Media
+  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/koreader.png
+  scheme: http
+  port_map: "3001"
+  index: /
+  title:
+    custom: KoInsight
+  tagline:
+    custom: KoInsight atras de Tailscale
+  description:
+    custom: Estatisticas de leitura do KOReader, expostas pela sidecar Tailscale na rede Docker compartilhada.

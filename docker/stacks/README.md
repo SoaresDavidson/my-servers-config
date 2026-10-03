@@ -53,6 +53,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | calibre | 8082 (GUI), 8081 (content server), 9090 (dispositivo sem fio) | 8080, 8081, 9090 |
 | shelfarr | 5056 | 80 |
 | lazylibrarian | 5299 | 5299 |
+| koinsight (estatísticas do KOReader) | 3001 | 3000 |
 | questarr | 5000 | 5000 |
 | hermes (Hermes Agent) | 9119 (dashboard), 8642 (API) | 9119, 8642 |
 | homepage (dashboard dos apps) | 3000 | 3000 |
