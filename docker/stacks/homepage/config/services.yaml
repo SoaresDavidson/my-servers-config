@@ -102,6 +102,11 @@
         href: https://shelfarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
         server: local
         container: shelfarr
+    - LazyLibrarian:
+        icon: lazylibrarian.png
+        href: https://lazylibrarian.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        server: local
+        container: lazylibrarian
 
 - Sistema:
     - Hermes:

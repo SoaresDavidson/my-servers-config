@@ -52,6 +52,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | bookshelf (fork do Readarr) | 8787 | 8787 |
 | calibre | 8082 (GUI), 8081 (content server), 9090 (dispositivo sem fio) | 8080, 8081, 9090 |
 | shelfarr | 5056 | 80 |
+| lazylibrarian | 5299 | 5299 |
 | questarr | 5000 | 5000 |
 | hermes (Hermes Agent) | 9119 (dashboard), 8642 (API) | 9119, 8642 |
 | homepage (dashboard dos apps) | 3000 | 3000 |
@@ -132,7 +133,7 @@ Os containers que precisam criar hardlinks recebem o pai comum como **um único 
     ├── movies         # root folder do Radarr
     ├── music          # root folder do Lidarr
     ├── books          # biblioteca do Calibre e root folder do Bookshelf
-    │   └── inbox      # saida do Shelfarr; Calibre importa daqui (Automatic adding)
+    │   └── inbox      # saida do Shelfarr e do LazyLibrarian; Calibre importa daqui (Automatic adding)
     └── audiobooks     # audiobooks do Shelfarr
 ```
 
