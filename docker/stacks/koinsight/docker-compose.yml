@@ -39,12 +39,16 @@ services:
         condition: service_healthy
     environment:
       - TZ=${TZ}
+      # O server faz bind em process.env.HOSTNAME, que o Docker preenche com o hostname do
+      # container ("koinsight" -> IP de eth0). Sem isso o app nao escuta em 127.0.0.1 e o
+      # tailscale serve e o healthcheck levam connection refused.
+      - HOSTNAME=0.0.0.0
     volumes:
       - ${CONFIG_HOST_PATH}/koinsight:/app/data
     restart: unless-stopped
     healthcheck:
       # Imagem Alpine: tem wget, nao curl.
-      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -q -O /dev/null http://localhost:3000/"]
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -q -O /dev/null http://127.0.0.1:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
