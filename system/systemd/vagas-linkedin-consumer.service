@@ -1,0 +1,27 @@
+# Consumidor Pub/Sub das notificações do Gmail na etiqueta vagas-linkedin: grava os IDs na fila
+# do Hermes (state/linkedin-vagas.sqlite3) e só então dá ack. Separado do gateway do Hermes.
+# Instalar:
+#   sudo install -D -m 644 -o root -g root system/systemd/vagas-linkedin-consumer.service /etc/systemd/system/vagas-linkedin-consumer.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now vagas-linkedin-consumer
+[Unit]
+Description=Consumidor Pub/Sub das vagas do LinkedIn (Gmail)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=davi
+Group=davi
+WorkingDirectory=/DATA/AppData/media-stack/hermes/data/scripts
+ExecStart=/home/davi/.venvs/vagas-linkedin/bin/python vagas_linkedin_consumer.py
+Environment=PYTHONUNBUFFERED=1
+Environment=VAGAS_TOPIC=vagas-linkedin
+Restart=always
+RestartSec=30
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

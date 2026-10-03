@@ -13,6 +13,8 @@ Configurações do host (Debian 13) fora do Docker. Cada arquivo é copiado para
 | `systemd/powertop.service.d/` | `override.conf` | `/etc/systemd/system/powertop.service.d/override.conf` | Roda `powertop --auto-tune` no boot e depois `usb-keep-awake`. Requer `systemctl daemon-reload`. |
 | `sbin/` | `usb-keep-awake` | `/usr/local/sbin/usb-keep-awake` | Tira do autosuspend USB o HD de mídia e o adaptador de rede do dock (RTL8153, reserva), que o powertop teria colocado para dormir. |
 | `systemd/` | `hermes-gateway-471fd707.service` | `/etc/systemd/system/hermes-gateway-471fd707.service` | Gateway do Hermes Agent direto no host, com `User=davi`. Ver [Hermes](#hermes). |
+| `systemd/user/` | `vagas-linkedin-consumer.service` | `~/.config/systemd/user/vagas-linkedin-consumer.service` | Consumidor Pub/Sub do Gmail em serviço de usuário com linger ativo. Ver [Vagas do LinkedIn](#vagas-do-linkedin). |
+| `systemd/` | `vagas-linkedin-consumer.service` | `/etc/systemd/system/vagas-linkedin-consumer.service` | Alternativa de serviço de sistema, não habilitar simultaneamente ao serviço de usuário. |
 
 ## Hermes
 
@@ -41,6 +43,28 @@ O `scripts/up-all.sh` ignora a stack `docker/stacks/hermes`; não a suba manualm
 um gateway ativo: se o serviço de usuário antigo estiver habilitado, desative-o com
 `systemctl --user disable --now hermes-gateway-471fd707.service` e confira o serviço de sistema com
 `hermes gateway status --system`. Dois gateways no mesmo bot do Discord disputam as mensagens.
+
+## Vagas do LinkedIn
+
+O Gmail publica no tópico Pub/Sub `vagas-linkedin` (projeto `pub-sub-email`) quando um e-mail recebe a
+etiqueta `vagas-linkedin`. O `vagas_linkedin_consumer.py` (em `$HERMES_HOME/scripts`, venv
+`~/.venvs/vagas-linkedin`) consome a assinatura `vagas-linkedin-sub`, lê `users.history.list` desde o
+cursor salvo e grava os IDs na fila `state/linkedin-vagas.sqlite3`; o ack só sai depois da gravação.
+Renova o `users.watch` a cada 24h e relê o histórico a cada hora. Credenciais em `~/.config/vagas-linkedin/`
+(fora do repo): `gmail-token.json` (OAuth, `gmail.readonly`) e `pubsub-sa.json` (só subscriber).
+O job Hermes `f1cdc4faa83c` consulta apenas a fila a cada minuto e só ativa a IA quando ela muda;
+entrega a resposta por DM no Discord. O primeiro `users.watch` cria o cursor sem reprocessar mensagens antigas.
+Quando o histórico do Gmail expira (404), a recuperação varre apenas os e-mails dos últimos 7 dias na etiqueta.
+
+O serviço de usuário está habilitado neste host (`loginctl show-user davi -p Linger` retorna `yes`).
+Para reinstalar a unit versionada, sem habilitar a alternativa em `/etc/systemd/system`:
+
+```bash
+install -D -m 644 system/systemd/user/vagas-linkedin-consumer.service ~/.config/systemd/user/vagas-linkedin-consumer.service
+systemctl --user daemon-reload
+systemctl --user enable --now vagas-linkedin-consumer.service
+journalctl --user -u vagas-linkedin-consumer -f
+```
 
 ## Energia
 

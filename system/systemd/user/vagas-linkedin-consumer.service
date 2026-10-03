@@ -1,0 +1,21 @@
+# Instalado com: install -D -m 644 system/systemd/user/vagas-linkedin-consumer.service ~/.config/systemd/user/vagas-linkedin-consumer.service
+[Unit]
+Description=Consumidor Pub/Sub das vagas do LinkedIn (Gmail)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=/DATA/AppData/media-stack/hermes/data/scripts
+ExecStart=/home/davi/.venvs/vagas-linkedin/bin/python /DATA/AppData/media-stack/hermes/data/scripts/vagas_linkedin_consumer.py
+Environment=PYTHONUNBUFFERED=1
+Environment=VAGAS_TOPIC=vagas-linkedin
+Restart=always
+RestartSec=30
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+
+[Install]
+WantedBy=default.target
