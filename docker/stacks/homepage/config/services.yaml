@@ -119,8 +119,6 @@
         icon: mdi-robot
         href: https://hermes.{{HOMEPAGE_VAR_TS_DOMAIN}}
         description: Hermes Agent
-        server: local
-        container: hermes
     - Dozzle:
         icon: dozzle.png
         href: https://dozzle.{{HOMEPAGE_VAR_TS_DOMAIN}}
