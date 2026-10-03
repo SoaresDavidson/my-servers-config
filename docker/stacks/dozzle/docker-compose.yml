@@ -29,6 +29,8 @@ services:
   dozzle:
     image: amir20/dozzle:latest
     container_name: dozzle
+    labels:
+      - autoheal=true
     network_mode: service:tailscale-dozzle
     depends_on:
       tailscale-dozzle:
@@ -40,9 +42,17 @@ services:
       - DOZZLE_ENABLE_SHELL=false
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # A imagem do dozzle e scratch (sem shell). O busybox estatico da imagem busybox:musl
+      # entra montado so para o healthcheck testar eth0, como nos outros apps.
+      - type: image
+        source: busybox:musl
+        target: /tools
+        read_only: true
+        image:
+          subpath: bin
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "/dozzle", "healthcheck"]
+      test: ["CMD", "/tools/busybox", "sh", "-c", "/tools/busybox test -e /sys/class/net/eth0 && /dozzle healthcheck"]
       interval: 30s
       timeout: 10s
       retries: 3
