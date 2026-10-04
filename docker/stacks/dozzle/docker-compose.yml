@@ -20,7 +20,7 @@ services:
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pgrep tailscaled"]
-      interval: 30s
+      interval: 2m
       timeout: 5s
       retries: 3
     networks:
@@ -42,18 +42,12 @@ services:
       - DOZZLE_ENABLE_SHELL=false
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # A imagem do dozzle e scratch (sem shell). O busybox estatico da imagem busybox:musl
-      # entra montado so para o healthcheck testar eth0, como nos outros apps.
-      - type: image
-        source: busybox:musl
-        target: /tools
-        read_only: true
-        image:
-          subpath: bin
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "/tools/busybox", "sh", "-c", "/tools/busybox test -e /sys/class/net/eth0 && /dozzle healthcheck"]
-      interval: 30s
+      # A imagem do dozzle e scratch (sem shell), entao nao testa eth0 como os outros apps.
+      # O volume type: image com busybox quebrava o parser de compose do CasaOS.
+      test: ["CMD", "/dozzle", "healthcheck"]
+      interval: 2m
       timeout: 10s
       retries: 3
 
