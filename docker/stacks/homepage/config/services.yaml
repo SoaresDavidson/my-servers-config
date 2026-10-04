@@ -113,6 +113,12 @@
         description: Estatísticas do KOReader
         server: local
         container: koinsight
+    - Leituras:
+        icon: koreader.png
+        href: https://leituras.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        description: Estatísticas de leitura
+        server: local
+        container: leituras
 
 - Sistema:
     - Hermes:

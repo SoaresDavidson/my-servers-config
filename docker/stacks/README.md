@@ -54,6 +54,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | shelfarr | 5056 | 80 |
 | lazylibrarian | 5299 | 5299 |
 | koinsight (estatísticas do KOReader) | 3001 | 3000 |
+| leituras (estatísticas do KOReader, build do GitHub) | 3333 no `HOST_LAN_IP` | 3333 |
 | questarr | 5000 | 5000 |
 | hermes (Hermes Agent) | 9119 (dashboard), 8642 (API) | 9119, 8642 |
 | homepage (dashboard dos apps) | 3000 | 3000 |
