@@ -37,7 +37,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/"]
-      interval: 30s
+      interval: 2m
       timeout: 10s
       retries: 3
     networks:

@@ -21,7 +21,7 @@ services:
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pgrep tailscaled"]
-      interval: 30s
+      interval: 2m
       timeout: 5s
       retries: 3
     networks:
@@ -49,7 +49,7 @@ services:
     healthcheck:
       # Imagem Alpine: tem wget, nao curl.
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -q -O /dev/null http://127.0.0.1:3000/"]
-      interval: 30s
+      interval: 2m
       timeout: 10s
       retries: 3
 

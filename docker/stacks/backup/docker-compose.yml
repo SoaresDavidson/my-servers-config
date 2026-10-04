@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://backup:$$RCLONE_PASS@localhost:8080/"]
-      interval: 30s
+      interval: 2m
       timeout: 10s
       retries: 3
 

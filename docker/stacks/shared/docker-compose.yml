@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8191/ || exit 1"]
-      interval: 30s
+      interval: 2m
       timeout: 10s
       retries: 3
     networks:
@@ -55,7 +55,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f decluttarr || exit 1"]
-      interval: 30s
+      interval: 2m
       timeout: 10s
       retries: 3
     networks:
@@ -70,7 +70,7 @@ services:
     # apps testa /sys/class/net/eth0 para detectar isso.
     environment:
       AUTOHEAL_CONTAINER_LABEL: autoheal
-      AUTOHEAL_INTERVAL: 30
+      AUTOHEAL_INTERVAL: 120
       # Folga para o boot: nao age nos primeiros minutos, enquanto as sidecars ainda sobem.
       AUTOHEAL_START_PERIOD: 300
       TZ: ${TZ}

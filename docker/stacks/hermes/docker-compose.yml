@@ -21,7 +21,7 @@ services:
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pgrep tailscaled"]
-      interval: 30s
+      interval: 2m
       timeout: 5s
       retries: 3
     networks:
@@ -55,7 +55,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -f http://localhost:9119/"]
-      interval: 30s
+      interval: 2m
       timeout: 10s
       retries: 3
 

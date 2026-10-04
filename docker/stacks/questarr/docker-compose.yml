@@ -37,7 +37,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -qO /dev/null http://127.0.0.1:5000/"]
-      interval: 30s
+      interval: 2m
       timeout: 10s
       retries: 3
 
