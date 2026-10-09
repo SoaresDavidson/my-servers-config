@@ -119,6 +119,12 @@
         description: Estatísticas de leitura
         server: local
         container: leituras
+    - Bookrats:
+        icon: koreader.png
+        href: https://bookrats.{{HOMEPAGE_VAR_TS_DOMAIN}}/app/
+        description: Leitura compartilhada (Funnel)
+        server: local
+        container: bookrats
 
 - Sistema:
     - Hermes:

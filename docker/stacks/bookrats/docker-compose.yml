@@ -1,0 +1,86 @@
+services:
+  tailscale-bookrats:
+    image: tailscale/tailscale:latest
+    container_name: bookrats_tailscale
+    hostname: bookrats
+    # Sem porta no host: o Funnel publica https://bookrats.<tailnet>.ts.net na internet e e a unica entrada.
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      # O estado veio do deploy antigo, criado com --hostname=bookrats: o tailscale up exige o mesmo flag.
+      - TS_HOSTNAME=bookrats
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - ${CONFIG_HOST_PATH}/tailscale/bookrats:/var/lib/tailscale
+      - ./ts-serve.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep tailscaled"]
+      interval: 2m
+      timeout: 5s
+      retries: 3
+    networks:
+      - media-network
+
+  bookrats:
+    # Sem imagem publicada: o compose builda direto do GitHub (repo publico).
+    # Para pegar commits novos da main: docker compose up -d --build bookrats
+    build:
+      context: https://github.com/SoaresDavidson/bookrats.git#main
+      dockerfile: backend/Dockerfile
+    image: bookrats:local
+    # "always" faria o compose tentar puxar bookrats:local do Docker Hub (nao existe).
+    pull_policy: build
+    container_name: bookrats
+    labels:
+      - autoheal=true
+      - docker-volume-backup.stop-during-backup=true
+    network_mode: service:tailscale-bookrats
+    depends_on:
+      tailscale-bookrats:
+        condition: service_healthy
+    # So em loopback: o Funnel e a unica entrada (nada de HTTP puro no IP do tailnet).
+    command: ["uvicorn", "bookrats.asgi:app", "--host", "127.0.0.1", "--port", "8000", "--proxy-headers"]
+    environment:
+      - TZ=${TZ}
+      - BOOKRATS_DB=/data/bookrats.db
+      # Opcional: chave da Google Books API para a busca de capas (funciona sem, com cota menor).
+      - BOOKRATS_GOOGLE_BOOKS_KEY=${BOOKRATS_GOOGLE_BOOKS_KEY:-}
+    volumes:
+      # A imagem roda como o usuario app (uid 1000): o diretorio precisa ser dele.
+      - ${CONFIG_HOST_PATH}/bookrats:/data
+    restart: unless-stopped
+    healthcheck:
+      # Imagem python:slim: sem curl nem wget.
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthcheck')\""]
+      interval: 2m
+      timeout: 10s
+      retries: 3
+
+networks:
+  media-network:
+    name: ${NETWORK_NAME}
+    external: true
+
+
+x-casaos:
+  main: tailscale-bookrats
+  architectures:
+    - amd64
+  author: SoaresDavidson
+  developer: SoaresDavidson
+  category: Media
+  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/koreader.png
+  scheme: https
+  index: /app/
+  title:
+    custom: Bookrats
+  tagline:
+    custom: Bookrats via Tailscale Funnel
+  description:
+    custom: Dashboard de leitura compartilhada (kosync + Goodreads), publicado na internet pelo Tailscale Funnel da sidecar.
