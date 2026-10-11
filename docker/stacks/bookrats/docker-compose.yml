@@ -51,6 +51,8 @@ services:
       - BOOKRATS_DB=/data/bookrats.db
       # Opcional: chave da Google Books API para a busca de capas (funciona sem, com cota menor).
       - BOOKRATS_GOOGLE_BOOKS_KEY=${BOOKRATS_GOOGLE_BOOKS_KEY:-}
+      # kosync oficial (stack kosync): cada PUT do KOReader e repassado para la, e os GETs leem de la.
+      - BOOKRATS_KOSYNC_UPSTREAM=http://kosync_tailscale:17200
     volumes:
       # A imagem roda como o usuario app (uid 1000): o diretorio precisa ser dele.
       - ${CONFIG_HOST_PATH}/bookrats:/data

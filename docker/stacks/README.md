@@ -56,6 +56,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | koinsight (estatísticas do KOReader) | 3001 | 3000 |
 | leituras (estatísticas do KOReader, build do GitHub) | 3333 no `HOST_LAN_IP` | 3333 |
 | bookrats (leitura compartilhada, build do GitHub) | — (só Tailscale Funnel, público) | 8000 em loopback |
+| kosync (KOReader Sync Server oficial; o bookrats repassa os PUTs) | — (rede Docker e tailnet) | 17200 (HTTP), 7200 (HTTPS autoassinado) |
 | questarr | 5000 | 5000 |
 | hermes (Hermes Agent) | 9119 (dashboard), 8642 (API) | 9119, 8642 |
 | homepage (dashboard dos apps) | 3000 | 3000 |
@@ -102,6 +103,26 @@ gpg -d media-stack-<data>.tar.zst.gpg | zstd -d | tar -x
 # backup/media-stack/<serviço>/ -> ${CONFIG_HOST_PATH}/<serviço>/   (com o container parado)
 # backup/env/.env               -> docker/.env
 ```
+
+## KOSync (progresso do KOReader)
+
+O KOReader de todo mundo continua apontando para o bookrats (`https://bookrats.<tailnet>.ts.net`, pelo Funnel).
+O bookrats grava cada `PUT /syncs/progress` no SQLite dele e repassa o corpo para o kosync oficial
+(`BOOKRATS_KOSYNC_UPSTREAM=http://kosync_tailscale:17200`). Os `GET` leem do kosync primeiro e voltam para a
+cópia local se ele estiver fora ou não conhecer o documento. Se o repasse falhar, o KOReader não vê erro; o
+log do bookrats mostra `kosync upstream ...` (um 401 indica conta faltando no kosync).
+
+O registro fica desligado (`ENABLE_USER_REGISTRATION=false`). A conta no kosync precisa ter o mesmo usuário e
+a mesma chave (MD5 da senha) de `users.kosync_*` no bookrats. Crie direto no Redis, no **db 1** (o db do
+ambiente `production`):
+
+```sh
+key=$(docker exec bookrats python -c "import sqlite3;print(sqlite3.connect('/data/bookrats.db').execute(\"select kosync_key from users where kosync_username='<usuario>'\").fetchone()[0])")
+docker exec kosync redis-cli -n 1 SETNX user:<usuario>:key "$key"
+```
+
+O Calibre não fala kosync. Para levar progresso e anotações ao Calibre, use o plugin KOReader Sync com o
+Kindle conectado como dispositivo sem fio (porta 9090 da stack `calibre`).
 
 ## Proteção contra malware nos downloads
 

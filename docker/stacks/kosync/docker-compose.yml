@@ -1,0 +1,78 @@
+services:
+  tailscale-kosync:
+    image: tailscale/tailscale:latest
+    container_name: kosync_tailscale
+    hostname: kosync
+    # Sem porta no host: o KOReader fala com o bookrats (Funnel), que repassa para ca pela
+    # rede Docker em http://kosync_tailscale:17200. No tailnet: https://kosync.<tailnet>.ts.net.
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - ${CONFIG_HOST_PATH}/tailscale/kosync:/var/lib/tailscale
+      - ./ts-serve.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep tailscaled"]
+      interval: 2m
+      timeout: 5s
+      retries: 3
+    networks:
+      - media-network
+
+  kosync:
+    image: koreader/kosync:latest
+    container_name: kosync
+    labels:
+      - autoheal=true
+      - docker-volume-backup.stop-during-backup=true
+    network_mode: service:tailscale-kosync
+    depends_on:
+      tailscale-kosync:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ}
+      # Contas sao criadas direto no Redis (ver README), espelhando users.kosync_* do bookrats.
+      - ENABLE_USER_REGISTRATION=false
+    volumes:
+      # Redis embutido (AOF everysec + RDB) e logs. 7200 e HTTPS autoassinado; 17200 e HTTP puro.
+      - ${CONFIG_HOST_PATH}/kosync/redis:/var/lib/redis
+      - ${CONFIG_HOST_PATH}/kosync/logs/redis:/var/log/redis
+      - ${CONFIG_HOST_PATH}/kosync/logs/app:/app/koreader-sync-server/logs
+    restart: unless-stopped
+    healthcheck:
+      # O script da imagem bate em https://127.0.0.1:7200/healthcheck com o Accept v1.
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && /app/koreader-sync-server/scripts/healthcheck.sh"]
+      interval: 2m
+      timeout: 10s
+      retries: 3
+
+networks:
+  media-network:
+    name: ${NETWORK_NAME}
+    external: true
+
+
+x-casaos:
+  main: tailscale-kosync
+  architectures:
+    - amd64
+    - arm64
+  author: SoaresDavidson
+  developer: koreader
+  category: Media
+  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/koreader.png
+  scheme: https
+  index: /healthcheck
+  title:
+    custom: KOSync
+  tagline:
+    custom: KOReader Sync Server atras de Tailscale
+  description:
+    custom: Servidor oficial de sincronizacao de progresso do KOReader. O bookrats recebe os PUTs pelo Funnel e repassa para ca.

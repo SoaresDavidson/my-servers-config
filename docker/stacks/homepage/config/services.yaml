@@ -125,6 +125,12 @@
         description: Leitura compartilhada (Funnel)
         server: local
         container: bookrats
+    - KOSync:
+        icon: koreader.png
+        href: https://kosync.{{HOMEPAGE_VAR_TS_DOMAIN}}/healthcheck
+        description: Sync de progresso do KOReader
+        server: local
+        container: kosync
 
 - Sistema:
     - Hermes:
