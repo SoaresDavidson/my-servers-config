@@ -15,10 +15,8 @@ for bid in cache.all_book_ids():
         continue
     _, name = drv._format_upload_path(cache.get_metadata(bid), 'x.epub')
     changes[bid] = hashlib.md5(name.encode()).hexdigest()
-    if bid in (39,) or len(samples) < 3:
+    if len(samples) < 3:
         samples.append((bid, name, changes[bid][:6]))
-check = drv._format_upload_path(cache.get_metadata(39), 'x.epub')[1]
-print('check 39:', check, hashlib.md5(check.encode()).hexdigest()[:6])
 cache.set_field('#ko_md5', changes)
 print('preenchidos:', len(changes))
 for s in samples: print(*s)
