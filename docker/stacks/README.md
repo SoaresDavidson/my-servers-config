@@ -59,6 +59,8 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | kosync (KOReader Sync Server oficial; o bookrats repassa os PUTs) | — (rede Docker e tailnet) | 17200 (HTTP), 7200 (HTTPS autoassinado) |
 | questarr | 5000 | 5000 |
 | hermes (Hermes Agent) | 9119 (dashboard), 8642 (API) | 9119, 8642 |
+| nextcloud (Postgres e Redis em 127.0.0.1, no namespace da sidecar) | 7580 | 80 |
+| onlyoffice (editor de documentos do Nextcloud) | — (tailnet e rede Docker) | 80 |
 | homepage (dashboard dos apps) | 3000 | 3000 |
 | dozzle (logs dos containers) | 8888 | 8080 |
 | adguard (DNS com bloqueio de anúncios) | 3080 (web), 53 tcp/udp no `HOST_LAN_IP` (DNS) | 80, 53 |
@@ -123,6 +125,24 @@ docker exec kosync redis-cli -n 1 SETNX user:<usuario>:key "$key"
 
 O Calibre não fala kosync. Para levar progresso e anotações ao Calibre, use o plugin KOReader Sync com o
 Kindle conectado como dispositivo sem fio (porta 9090 da stack `calibre`).
+
+## Nextcloud e OnlyOffice
+
+Migrados do CasaOS (`/DATA/AppData/big-bear-*`, que ficou intacto) para `${CONFIG_HOST_PATH}/nextcloud` e
+`${CONFIG_HOST_PATH}/onlyoffice`. O `config.php` teve só o `dbhost` trocado para `127.0.0.1`.
+
+O Nextcloud responde em três endereços: `https://nextcloud.<tailnet>.ts.net` (tailscale serve), `http://<HOST_LAN_IP>:7580`
+e `http://tailscale-nextcloud` (rede Docker, usado pelo OnlyOffice). Entre as stacks, use o nome do serviço
+(`tailscale-nextcloud`, `tailscale-onlyoffice`), não o `container_name`: o `_` não vale em hostname e o cliente HTTP
+do Nextcloud o codifica (`onlyoffice%5ftailscale`), quebrando a conversão. `OVERWRITECONDADDR=^127\.0\.0\.1$` faz o https e o
+host do tailnet valerem só para o que chega pelo tailscale serve; os outros dois seguem em http. O que a imagem só grava
+na instalação (trusted domains, cron, app onlyoffice) é reaplicado a cada start por `hooks/10-config.sh`.
+
+O editor abre no navegador em `https://onlyoffice.<tailnet>.ts.net`, então só funciona para quem está no tailnet. Na LAN
+os arquivos abrem, mas a edição não. O segredo JWT (`ONLYOFFICE_JWT_SECRET`) é o mesmo nas duas stacks.
+
+As imagens têm major fixo (`nextcloud:33-apache`, `postgres:14`): o Nextcloud não pula majors e o Postgres não abre
+dados de outro major sem `pg_upgrade`. Para subir de major, troque a tag à mão, um major por vez.
 
 ## Proteção contra malware nos downloads
 

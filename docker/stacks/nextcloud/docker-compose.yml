@@ -1,0 +1,168 @@
+services:
+  tailscale-nextcloud:
+    image: tailscale/tailscale:latest
+    container_name: nextcloud_tailscale
+    hostname: nextcloud
+    ports:
+      - "7580:80"
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - ${CONFIG_HOST_PATH}/tailscale/nextcloud:/var/lib/tailscale
+      - ./ts-serve.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep tailscaled"]
+      interval: 2m
+      timeout: 5s
+      retries: 3
+    networks:
+      - media-network
+
+  # Postgres e Redis dividem o namespace da sidecar e escutam só em 127.0.0.1: nem a rede
+  # Docker nem o tailnet alcançam o banco.
+  db:
+    # Major fixo: o diretório de dados é do Postgres 14 e não sobe em outro major sem pg_upgrade.
+    image: postgres:14
+    container_name: nextcloud_db
+    command: ["postgres", "-c", "listen_addresses=127.0.0.1"]
+    labels:
+      - autoheal=true
+      - docker-volume-backup.stop-during-backup=true
+    network_mode: service:tailscale-nextcloud
+    depends_on:
+      tailscale-nextcloud:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ}
+      # Só valem num diretório vazio; os dados migrados já têm usuário e banco.
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD:?defina NEXTCLOUD_DB_PASSWORD no .env}
+    volumes:
+      - ${CONFIG_HOST_PATH}/nextcloud/db:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && pg_isready -h 127.0.0.1"]
+      interval: 2m
+      timeout: 5s
+      retries: 3
+      start_period: 1m
+      start_interval: 5s
+
+  redis:
+    # Só cache e locks; nada a persistir.
+    image: redis:7-alpine
+    container_name: nextcloud_redis
+    command: ["redis-server", "--bind", "127.0.0.1", "--save", "", "--appendonly", "no"]
+    labels:
+      - autoheal=true
+    network_mode: service:tailscale-nextcloud
+    depends_on:
+      tailscale-nextcloud:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && redis-cli -h 127.0.0.1 ping | grep -q PONG"]
+      interval: 2m
+      timeout: 5s
+      retries: 3
+      start_period: 1m
+      start_interval: 5s
+
+  nextcloud:
+    # Major fixo: o Nextcloud não pula majors, e o update-all puxaria um latest dois majors à frente.
+    image: nextcloud:33-apache
+    container_name: nextcloud
+    labels:
+      - autoheal=true
+      - docker-volume-backup.stop-during-backup=true
+    network_mode: service:tailscale-nextcloud
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ}
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=1024M
+      # Lidos a cada request pelos config/*.config.php da imagem, por cima do config.php.
+      - REDIS_HOST=127.0.0.1
+      - TRUSTED_PROXIES=127.0.0.1
+      # O tailscale serve chega de 127.0.0.1 com TLS já terminado. Só nesse caso força https e o
+      # host do tailnet; LAN (porta 7580) e o OnlyOffice pela rede Docker seguem em http.
+      - OVERWRITECONDADDR=^127\.0\.0\.1$$
+      - OVERWRITEPROTOCOL=https
+      - OVERWRITEHOST=nextcloud.${TS_DOMAIN}
+      - OVERWRITECLIURL=https://nextcloud.${TS_DOMAIN}
+      # Usados pelo hook before-starting.
+      - TS_DOMAIN=${TS_DOMAIN}
+      - HOST_LAN_IP=${HOST_LAN_IP}
+      - ONLYOFFICE_JWT_SECRET=${ONLYOFFICE_JWT_SECRET:?defina ONLYOFFICE_JWT_SECRET no .env}
+    volumes:
+      - ${CONFIG_HOST_PATH}/nextcloud/html:/var/www/html
+      - ./hooks:/docker-entrypoint-hooks.d/before-starting:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -fs http://localhost/status.php | grep -q '\"installed\":true'"]
+      interval: 2m
+      timeout: 10s
+      retries: 3
+      start_period: 5m
+      start_interval: 10s
+
+  cron:
+    image: nextcloud:33-apache
+    container_name: nextcloud_cron
+    entrypoint: /cron.sh
+    labels:
+      - autoheal=true
+      - docker-volume-backup.stop-during-backup=true
+    network_mode: service:tailscale-nextcloud
+    depends_on:
+      nextcloud:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ}
+      - REDIS_HOST=127.0.0.1
+    volumes:
+      - ${CONFIG_HOST_PATH}/nextcloud/html:/var/www/html
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0"]
+      interval: 2m
+      timeout: 5s
+      retries: 3
+
+networks:
+  media-network:
+    name: ${NETWORK_NAME}
+    external: true
+
+
+x-casaos:
+  main: tailscale-nextcloud
+  architectures:
+    - amd64
+    - arm64
+  author: SoaresDavidson
+  developer: nextcloud
+  category: Cloud
+  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/nextcloud.png
+  scheme: http
+  port_map: "7580"
+  index: /
+  title:
+    custom: Nextcloud
+  tagline:
+    custom: Nextcloud atras de Tailscale
+  description:
+    custom: Nextcloud com Postgres e Redis no namespace da sidecar Tailscale, editando documentos pelo OnlyOffice.

@@ -1,0 +1,86 @@
+services:
+  tailscale-onlyoffice:
+    image: tailscale/tailscale:latest
+    container_name: onlyoffice_tailscale
+    hostname: onlyoffice
+    # Sem porta no host: o navegador abre o editor em https://onlyoffice.<tailnet>.ts.net e o
+    # Nextcloud fala com http://tailscale-onlyoffice pela rede Docker.
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - ${CONFIG_HOST_PATH}/tailscale/onlyoffice:/var/lib/tailscale
+      - ./ts-serve.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep tailscaled"]
+      interval: 2m
+      timeout: 5s
+      retries: 3
+    networks:
+      - media-network
+
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: onlyoffice
+    labels:
+      - autoheal=true
+      - docker-volume-backup.stop-during-backup=true
+    network_mode: service:tailscale-onlyoffice
+    depends_on:
+      tailscale-onlyoffice:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ}
+      # O mesmo segredo vai para o app onlyoffice do Nextcloud (hook before-starting).
+      - JWT_ENABLED=true
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:?defina ONLYOFFICE_JWT_SECRET no .env}
+      # O Nextcloud é alcançado por http://tailscale-nextcloud, um IP da rede Docker; sem isto o
+      # Document Server recusa baixar e salvar os arquivos.
+      - ALLOW_PRIVATE_IP_ADDRESS=true
+    volumes:
+      # Postgres, RabbitMQ e Redis embutidos: só estado das sessões de edição e cache.
+      - ${CONFIG_HOST_PATH}/onlyoffice/lib:/var/lib/onlyoffice
+      - ${CONFIG_HOST_PATH}/onlyoffice/db:/var/lib/postgresql
+      - ${CONFIG_HOST_PATH}/onlyoffice/rabbitmq:/var/lib/rabbitmq
+      - ${CONFIG_HOST_PATH}/onlyoffice/redis:/var/lib/redis
+      - ${CONFIG_HOST_PATH}/onlyoffice/data:/var/www/onlyoffice/Data
+      - ${CONFIG_HOST_PATH}/onlyoffice/logs:/var/log/onlyoffice
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -fs http://localhost/healthcheck | grep -q true"]
+      interval: 2m
+      timeout: 10s
+      retries: 3
+      start_period: 5m
+      start_interval: 10s
+
+networks:
+  media-network:
+    name: ${NETWORK_NAME}
+    external: true
+
+
+x-casaos:
+  main: tailscale-onlyoffice
+  architectures:
+    - amd64
+    - arm64
+  author: SoaresDavidson
+  developer: onlyoffice
+  category: Cloud
+  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/onlyoffice.png
+  scheme: https
+  index: /healthcheck
+  title:
+    custom: OnlyOffice
+  tagline:
+    custom: OnlyOffice Docs atras de Tailscale
+  description:
+    custom: Document Server do OnlyOffice, usado pelo Nextcloud para editar documentos no navegador.

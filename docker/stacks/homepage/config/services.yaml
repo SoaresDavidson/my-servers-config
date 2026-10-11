@@ -137,6 +137,18 @@
         icon: mdi-robot
         href: https://hermes.{{HOMEPAGE_VAR_TS_DOMAIN}}
         description: Hermes Agent
+    - Nextcloud:
+        icon: nextcloud.png
+        href: https://nextcloud.{{HOMEPAGE_VAR_TS_DOMAIN}}
+        description: Arquivos e documentos
+        server: local
+        container: nextcloud
+    - OnlyOffice:
+        icon: onlyoffice.png
+        href: https://onlyoffice.{{HOMEPAGE_VAR_TS_DOMAIN}}/healthcheck
+        description: Editor de documentos do Nextcloud
+        server: local
+        container: onlyoffice
     - Dozzle:
         icon: dozzle.png
         href: https://dozzle.{{HOMEPAGE_VAR_TS_DOMAIN}}
