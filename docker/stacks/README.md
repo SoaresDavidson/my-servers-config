@@ -123,8 +123,49 @@ key=$(docker exec bookrats python -c "import sqlite3;print(sqlite3.connect('/dat
 docker exec kosync redis-cli -n 1 SETNX user:<usuario>:key "$key"
 ```
 
-O Calibre não fala kosync. Para levar progresso e anotações ao Calibre, use o plugin KOReader Sync com o
-Kindle conectado como dispositivo sem fio (porta 9090 da stack `calibre`).
+### Calibre (plugin KOReader Sync)
+
+O plugin [KOReader Sync](https://github.com/kyxap/koreader-calibre-plugin) (v0.8.2) lê o progresso de dois jeitos:
+
+- **ProgressSync:** todo dia às 04:00, com a GUI aberta (o container mantém), ou pelo menu do plugin. Ele consulta
+  `http://kosync_tailscale:17200/syncs/progress/<#ko_md5>` como `davi` e preenche progresso, local, dispositivo e
+  datas. Só pega livros com `#ko_md5` preenchido e status vazio ou `reading`.
+- **Dispositivo sem fio:** com o KOReader conectado pela porta 9090, lê os sidecars `.sdr` e preenche também
+  status, nota, resenha, marcações e o próprio `#ko_md5`.
+
+O `#ko_md5` é o `document` que o dispositivo manda ao kosync, e cada um calcula de um jeito:
+
+- **CrossPoint** (modo *Filename*): `md5` do nome do arquivo no dispositivo. O driver CrossPoint Reader envia como
+  `{title} - {authors}.epub` (via `ascii_filename`), então o Calibre consegue calcular. O `fill-ko-md5.py` preenche
+  os livros com a coluna vazia, usando o próprio driver para gerar o nome. Rode depois de adicionar livros:
+
+  ```sh
+  docker stop calibre
+  docker run --rm --user 1000:1000 -e HOME=/config -v ${CONFIG_HOST_PATH}/calibre/config:/config \
+    -v "$PWD/stacks/calibre":/work:ro --entrypoint calibre-debug lscr.io/linuxserver/calibre:latest /work/fill-ko-md5.py
+  docker start calibre
+  ```
+  (Com a GUI parada: ela mantém um cache e não veria a mudança.)
+- **Kindle** (KOReader, modo *binary*): *partial MD5* do conteúdo do arquivo no Kindle. Ele difere do arquivo da
+  biblioteca, porque o Calibre reescreve os metadados ao enviar. Esse hash chega pela sincronização sem fio do plugin
+  (ou à mão, a partir do `documents` do bookrats, que guarda título por hash). Essa sincronização **sobrescreve** o
+  `#ko_md5` com o hash do Kindle.
+
+A coluna guarda um hash por livro, então o Calibre acompanha um dispositivo por livro. Para unificar, o KOReader do
+Kindle teria que usar o modo *Filename*, e o driver sem fio teria que ter o mesmo template do CrossPoint (hoje é
+`{title} - {authors} ({id})`).
+
+As 16 colunas `#ko_*` foram criadas com os formatos padrão do plugin. A config fica em
+`${CONFIG_HOST_PATH}/calibre/config/.config/calibre/plugins/KOReader Sync.json`.
+
+O zip instalado tem um patch de uma linha, do [PR #159](https://github.com/kyxap/koreader-calibre-plugin/pull/159),
+para o [bug #163](https://github.com/kyxap/koreader-calibre-plugin/issues/163). O plugin divide por 1000 o
+`timestamp` do kosync, que vem em segundos, e as datas caíam em 1970. Ao atualizar o plugin, confira se o PR já
+entrou; se não, reaplique:
+
+```sh
+sed -i "s|progress_data\['timestamp'\]/1000|progress_data['timestamp']|" action.py
+```
 
 ## Nextcloud e OnlyOffice
 
