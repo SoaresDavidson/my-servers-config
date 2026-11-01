@@ -5,6 +5,9 @@ set -eu
 
 occ() { php /var/www/html/occ "$@"; }
 
+# Sem instalação (falha no install automático), sai sem erro para o instalador web abrir.
+occ status --output=json | grep -q '"installed":true' || exit 0
+
 # Tailnet (via tailscale serve), LAN (porta 7580) e o OnlyOffice pela rede Docker.
 occ config:system:set trusted_domains 0 --value=localhost
 occ config:system:set trusted_domains 1 --value="nextcloud.$TS_DOMAIN"

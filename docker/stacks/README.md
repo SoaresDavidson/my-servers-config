@@ -169,18 +169,35 @@ sed -i "s|progress_data\['timestamp'\]/1000|progress_data['timestamp']|" action.
 
 ## Nextcloud e OnlyOffice
 
-Migrados do CasaOS (`/DATA/AppData/big-bear-*`, que ficou intacto) para `${CONFIG_HOST_PATH}/nextcloud` e
-`${CONFIG_HOST_PATH}/onlyoffice`. O `config.php` teve só o `dbhost` trocado para `127.0.0.1`.
+Instalação limpa em `${CONFIG_HOST_PATH}/nextcloud` e `${CONFIG_HOST_PATH}/onlyoffice` (a do CasaOS ficou em
+`/DATA/AppData/big-bear-*`). Com `html/` vazio, a imagem instala sozinha com Postgres em `127.0.0.1` e a conta
+`NEXTCLOUD_ADMIN_USER`/`NEXTCLOUD_ADMIN_PASSWORD` do `.env`. Uma pasta `html/` que já tem `version.php` não é
+reinstalada, mesmo sem `config.php`: para recomeçar, apague `html/` e `db/` com a stack parada.
 
 O Nextcloud responde em três endereços: `https://nextcloud.<tailnet>.ts.net` (tailscale serve), `http://<HOST_LAN_IP>:7580`
 e `http://tailscale-nextcloud` (rede Docker, usado pelo OnlyOffice). Entre as stacks, use o nome do serviço
 (`tailscale-nextcloud`, `tailscale-onlyoffice`), não o `container_name`: o `_` não vale em hostname e o cliente HTTP
 do Nextcloud o codifica (`onlyoffice%5ftailscale`), quebrando a conversão. `OVERWRITECONDADDR=^127\.0\.0\.1$` faz o https e o
 host do tailnet valerem só para o que chega pelo tailscale serve; os outros dois seguem em http. O que a imagem só grava
-na instalação (trusted domains, cron, app onlyoffice) é reaplicado a cada start por `hooks/10-config.sh`.
+na instalação (trusted domains, cron, app onlyoffice) é reaplicado a cada start por `hooks/before-starting/10-config.sh`.
+O que fica no banco e basta fazer uma vez (instalar o app onlyoffice, criar a pasta Mídia) roda só após a instalação,
+por `hooks/post-installation/10-setup.sh`.
 
 O editor abre no navegador em `https://onlyoffice.<tailnet>.ts.net`, então só funciona para quem está no tailnet. Na LAN
 os arquivos abrem, mas a edição não. O segredo JWT (`ONLYOFFICE_JWT_SECRET`) é o mesmo nas duas stacks.
+
+O HD de mídia aparece para todos os usuários como a pasta **Mídia** (External Storage local, `${DATA_HOST_PATH}`
+montado `:ro` em `/mnt/midia`). É só leitura duas vezes, no bind e na opção `readonly` do mount, porque a biblioteca é
+dos *arr: apagar ou mover pelo Nextcloud quebraria hardlinks e seeding. As prévias estão desligadas, para o Nextcloud
+não gerar miniaturas da biblioteca inteira. O mount fica no banco do Nextcloud, não no compose. O hook
+post-installation o cria; para recriar à mão:
+
+```sh
+docker exec -u www-data nextcloud php occ app:enable files_external
+docker exec -u www-data nextcloud php occ files_external:create Mídia local null::null -c datadir=/mnt/midia
+docker exec -u www-data nextcloud php occ files_external:option <id> readonly true
+docker exec -u www-data nextcloud php occ files_external:option <id> previews false
+```
 
 As imagens têm major fixo (`nextcloud:33-apache`, `postgres:14`): o Nextcloud não pula majors e o Postgres não abre
 dados de outro major sem `pg_upgrade`. Para subir de major, troque a tag à mão, um major por vez.

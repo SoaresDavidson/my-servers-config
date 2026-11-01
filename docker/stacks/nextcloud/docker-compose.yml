@@ -42,7 +42,7 @@ services:
         condition: service_healthy
     environment:
       - TZ=${TZ}
-      # Só valem num diretório vazio; os dados migrados já têm usuário e banco.
+      # Só valem num diretório vazio.
       - POSTGRES_DB=nextcloud
       - POSTGRES_USER=nextcloud
       - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD:?defina NEXTCLOUD_DB_PASSWORD no .env}
@@ -92,6 +92,13 @@ services:
         condition: service_healthy
     environment:
       - TZ=${TZ}
+      # Instalação automática; só vale com /var/www/html vazio.
+      - POSTGRES_HOST=127.0.0.1
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER:?defina NEXTCLOUD_ADMIN_USER no .env}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD:?defina NEXTCLOUD_ADMIN_PASSWORD no .env}
       - PHP_MEMORY_LIMIT=1024M
       - PHP_UPLOAD_LIMIT=1024M
       # Lidos a cada request pelos config/*.config.php da imagem, por cima do config.php.
@@ -109,7 +116,10 @@ services:
       - ONLYOFFICE_JWT_SECRET=${ONLYOFFICE_JWT_SECRET:?defina ONLYOFFICE_JWT_SECRET no .env}
     volumes:
       - ${CONFIG_HOST_PATH}/nextcloud/html:/var/www/html
-      - ./hooks:/docker-entrypoint-hooks.d/before-starting:ro
+      - ./hooks/post-installation:/docker-entrypoint-hooks.d/post-installation:ro
+      - ./hooks/before-starting:/docker-entrypoint-hooks.d/before-starting:ro
+      # External Storage "Mídia". Só leitura: a biblioteca é dos *arr (hardlinks e seeding).
+      - ${DATA_HOST_PATH}:/mnt/midia:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -fs http://localhost/status.php | grep -q '\"installed\":true'"]
@@ -135,6 +145,8 @@ services:
       - REDIS_HOST=127.0.0.1
     volumes:
       - ${CONFIG_HOST_PATH}/nextcloud/html:/var/www/html
+      # Os background jobs também varrem o External Storage.
+      - ${DATA_HOST_PATH}:/mnt/midia:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0"]
