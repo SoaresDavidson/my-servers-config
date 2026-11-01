@@ -40,6 +40,7 @@ services:
       # Só leitura de logs: sem start/stop/restart nem shell pela interface.
       - DOZZLE_ENABLE_ACTIONS=false
       - DOZZLE_ENABLE_SHELL=false
+      - DOZZLE_ENABLE_MCP=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
