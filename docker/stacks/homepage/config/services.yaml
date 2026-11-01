@@ -107,18 +107,6 @@
         href: https://lazylibrarian.{{HOMEPAGE_VAR_TS_DOMAIN}}
         server: local
         container: lazylibrarian
-    - KoInsight:
-        icon: koreader.png
-        href: https://koinsight.{{HOMEPAGE_VAR_TS_DOMAIN}}
-        description: Estatísticas do KOReader
-        server: local
-        container: koinsight
-    - Leituras:
-        icon: koreader.png
-        href: https://leituras.{{HOMEPAGE_VAR_TS_DOMAIN}}
-        description: Estatísticas de leitura
-        server: local
-        container: leituras
     - Bookrats:
         icon: koreader.png
         href: https://bookrats.{{HOMEPAGE_VAR_TS_DOMAIN}}/app/

@@ -53,8 +53,6 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | calibre | 8082 (GUI), 8081 (content server), 9090 (dispositivo sem fio) | 8080, 8081, 9090 |
 | shelfarr | 5056 | 80 |
 | lazylibrarian | 5299 | 5299 |
-| koinsight (estatísticas do KOReader) | 3001 | 3000 |
-| leituras (estatísticas do KOReader, build do GitHub) | 3333 no `HOST_LAN_IP` | 3333 |
 | bookrats (leitura compartilhada, build do GitHub) | — (só Tailscale Funnel, público) | 8000 em loopback |
 | kosync (KOReader Sync Server oficial; o bookrats repassa os PUTs) | — (rede Docker e tailnet) | 17200 (HTTP), 7200 (HTTPS autoassinado) |
 | questarr | 5000 | 5000 |
