@@ -26,6 +26,23 @@ cd stacks/sonarr
 docker compose up -d
 ```
 
+O crontab do usuário `davi` executa `scripts/update-all.sh` diariamente às 05:00,
+com trava contra execuções simultâneas e log em `docker/.state/docker-update.log`.
+O arquivo `system/cron.d/docker-update` permite instalar a mesma rotina pelo cron do
+sistema, como alternativa ao crontab do usuário (use apenas um dos dois).
+Para essa instalação alternativa, a partir da raiz do repositório:
+
+```sh
+mkdir -p docker/.state
+sudo install -m 644 -o root -g root system/cron.d/docker-update /etc/cron.d/docker-update
+```
+
+O `up-all.sh` também compara a imagem de cada container com a imagem local da mesma tag:
+após um pull, recria stacks com imagens novas mesmo se estiverem saudáveis e sem alterações
+no compose. O download ignora imagens de build local e a stack Hermes migrada para o host.
+Se o download de uma stack falhar, as demais continuam e as imagens disponíveis são aplicadas;
+o script retorna erro ao final para registrar a falha.
+
 ## CasaOS
 
 No CasaOS, use *Custom Install → Import*, colando o conteúdo de `docker-compose.yml` da stack. O `x-casaos` de topo define:

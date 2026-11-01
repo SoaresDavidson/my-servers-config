@@ -60,6 +60,28 @@ has_changes() {
   return 1
 }
 
+# Uma tag pode apontar para outra imagem após o pull, sem mudar o compose.
+# Em caso de falha na consulta, deixa o compose reconciliar a stack.
+has_image_changes() {
+  local stack_path=$1
+  local stack_containers container image_info running_image image_ref local_image
+
+  stack_containers=$(docker compose --env-file "$ENV_FILE" -f "$stack_path" ps -a -q) || return 0
+  [ -n "$stack_containers" ] || return 0
+
+  for container in $stack_containers; do
+    image_info=$(docker inspect --format '{{.Image}} {{.Config.Image}}' "$container") || return 0
+    running_image=${image_info%% *}
+    image_ref=${image_info#* }
+    local_image=$(docker image inspect --format '{{.Id}}' "$image_ref") || return 0
+    if [ "$running_image" != "$local_image" ]; then
+      log_info "Imagem nova disponível localmente: $image_ref."
+      return 0
+    fi
+  done
+  return 1
+}
+
 # --- Execução ---
 
 # 1. Stack Shared (Sempre primeiro e aguarda health)
@@ -95,7 +117,7 @@ for stack_dir in "$STACKS_DIR"/*/; do
   compose_file="$stack_dir/docker-compose.yml"
   [ ! -f "$compose_file" ] && continue
 
-  if is_stack_healthy "$compose_file" && ! has_changes "$compose_file"; then
+  if is_stack_healthy "$compose_file" && ! has_changes "$compose_file" && ! has_image_changes "$compose_file"; then
     log_info "Stack $name já está saudável e sem alterações. Pulando..."
     continue
   fi

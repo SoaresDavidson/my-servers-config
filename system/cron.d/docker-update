@@ -1,0 +1,7 @@
+# Atualiza os containers diariamente, depois do horário do backup (03:00).
+# Instalar: sudo install -m 644 -o root -g root system/cron.d/docker-update /etc/cron.d/docker-update
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+LANG=C.UTF-8
+
+0 5 * * * davi /usr/bin/flock -n /home/davi/my-servers-config/docker/.state/docker-update.lock /home/davi/my-servers-config/scripts/update-all.sh >> /home/davi/my-servers-config/docker/.state/docker-update.log 2>&1
