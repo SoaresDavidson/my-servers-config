@@ -63,7 +63,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | lidarr | 8686 | 8686 |
 | bazarr | 6767 | 6767 |
 | profilarr | 6868 | 6868 |
-| qbittorrent | 8080 (sem Tailscale, atrás da Proton VPN) | 8080 |
+| qbittorrent | 8080 (sem Tailscale, atrás da Surfshark) | 8080 |
 | jellyfin | 8096 | 8096 |
 | jellyseerr | 5055 | 5055 |
 | bookshelf (fork do Readarr) | 8787 | 8787 |

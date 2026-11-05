@@ -20,7 +20,7 @@
     - qBittorrent:
         icon: qbittorrent.png
         href: http://{{HOMEPAGE_VAR_HOST_LAN_IP}}:8080
-        description: Downloads (Proton VPN, só LAN)
+        description: Downloads (Surfshark, só LAN)
         server: local
         container: qbittorrent
 

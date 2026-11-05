@@ -16,15 +16,18 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-      # WireGuard da Proton VPN. wg0.conf fica em ${CONFIG_HOST_PATH}/qbittorrent/config/wireguard/wg0.conf
+      # WireGuard da Surfshark. wg0.conf fica em ${CONFIG_HOST_PATH}/qbittorrent/config/wireguard/wg0.conf
       - VPN_ENABLED=true
       - VPN_CONF=wg0
-      - VPN_PROVIDER=proton
+      - VPN_PROVIDER=generic
       # LAN fisica do host, para a WebUI responder a maquinas fora do servidor.
       - VPN_LAN_NETWORK=192.168.100.0/24
       - VPN_EXPOSE_PORTS_ON_LAN=8080/tcp
-      - VPN_AUTO_PORT_FORWARD=true
+      - VPN_AUTO_PORT_FORWARD=false
       - VPN_HEALTHCHECK_ENABLED=true
+      # Vazio ativa o Unbound recursivo, que nao resolve nomes pelo tunel da Surfshark.
+      # "wg" usa os DNS do wg0.conf.
+      - VPN_NAMESERVERS=wg
       - PRIVOXY_ENABLED=false
     # O unbound do modo VPN nao consulta o DNS do Docker, entao "prowlarr" nao resolve e
     # URLs de download vindas do Questarr falham. Aponta para o gateway da medianet, onde
@@ -62,6 +65,6 @@ x-casaos:
   title:
     custom: qBittorrent
   tagline:
-    custom: qBittorrent atras da Proton VPN
+    custom: qBittorrent atras da Surfshark
   description:
-    custom: qBittorrent com WireGuard da Proton VPN. WebUI publicada na porta 8080 do host.
+    custom: qBittorrent com WireGuard da Surfshark. WebUI publicada na porta 8080 do host.
