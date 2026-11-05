@@ -25,8 +25,11 @@ services:
     image: offen/docker-volume-backup:v2
     container_name: backup
     depends_on:
+      # Não usar service_healthy: com o rclone unhealthy durante o update-all, o backup
+      # ficava criado mas nunca iniciado, e o cron das 03:00 parava de rodar em silêncio.
+      # O rclone só é necessário no envio; a cópia local é gravada antes dele.
       rclone:
-        condition: service_healthy
+        condition: service_started
     environment:
       - TZ=${TZ}
       - BACKUP_CRON_EXPRESSION=0 3 * * *
@@ -35,7 +38,9 @@ services:
       - BACKUP_COMPRESSION=zst
       - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-7}
       # Conteúdo regenerável, que só aumenta o arquivo.
-      - BACKUP_EXCLUDE_REGEXP=/(cache|transcodes|log|logs|MediaCover)/
+      # O Hermes roda no host e não para durante o backup: arquivos que ele apaga
+      # entre a listagem e a leitura abortam o backup inteiro (lstat: no such file).
+      - BACKUP_EXCLUDE_REGEXP=/(cache|transcodes|log|logs|MediaCover|hermes/data/cron/output|\.leases)/
       # O arquivo contém wg0.conf, estado do Tailscale e o .env: nunca sai do servidor sem criptografia.
       - GPG_PASSPHRASE=${BACKUP_PASSPHRASE:?defina BACKUP_PASSPHRASE no .env}
       - WEBDAV_URL=http://rclone:8080/
