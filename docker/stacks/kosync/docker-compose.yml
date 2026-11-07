@@ -4,7 +4,7 @@ services:
     container_name: kosync_tailscale
     hostname: kosync
     # HTTP direto na LAN para leitores sem Tailscale, como o Kindle.
-    # O bookrats pode continuar repassando pela rede Docker; HTTPS no tailnet segue igual.
+    # O HTTPS pelo tailnet continua disponível.
     ports:
       - "${HOST_LAN_IP:?Defina HOST_LAN_IP no .env}:17200:17200/tcp"
     environment:
@@ -77,4 +77,4 @@ x-casaos:
   tagline:
     custom: KOReader Sync Server atras de Tailscale
   description:
-    custom: Servidor oficial de sincronizacao de progresso do KOReader. O bookrats recebe os PUTs pelo Funnel e repassa para ca.
+    custom: Servidor oficial de sincronizacao de progresso do KOReader.

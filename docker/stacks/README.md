@@ -70,8 +70,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | calibre | 8082 (GUI), 8081 (content server), 9090 (dispositivo sem fio) | 8080, 8081, 9090 |
 | shelfarr | 5056 | 80 |
 | lazylibrarian | 5299 | 5299 |
-| bookrats (leitura compartilhada, build do GitHub) | — (só Tailscale Funnel, público) | 8000 em loopback |
-| kosync (KOReader Sync Server oficial; o bookrats repassa os PUTs) | 17200 (HTTP, só no `HOST_LAN_IP`) | 17200 (HTTP), 7200 (HTTPS autoassinado) |
+| kosync (KOReader Sync Server oficial) | 17200 (HTTP, só no `HOST_LAN_IP`) | 17200 (HTTP), 7200 (HTTPS autoassinado) |
 | questarr | 5000 | 5000 |
 | hermes (Hermes Agent) | 9119 (dashboard), 8642 (API) | 9119, 8642 |
 | nextcloud (Postgres e Redis em 127.0.0.1, no namespace da sidecar) | 7580 | 80 |
@@ -143,20 +142,12 @@ Depois de criar as contas necessárias, volte a variável para `false` e repita 
 isso fecha novos cadastros sem apagar as contas existentes. Um simples `docker compose restart`
 não aplica alterações de variáveis de ambiente.
 
-Para a integração com o Bookrats, o KOReader pode continuar apontando para
-`https://bookrats.<tailnet>.ts.net`, pelo Funnel, enquanto o serviço Bookrats estiver ativo.
-O bookrats grava cada `PUT /syncs/progress` no SQLite dele e repassa o corpo para o kosync oficial
-(`BOOKRATS_KOSYNC_UPSTREAM=http://kosync_tailscale:17200`). Os `GET` leem do kosync primeiro e voltam para a
-cópia local se ele estiver fora ou não conhecer o documento. Se o repasse falhar, o KOReader não vê erro; o
-log do bookrats mostra `kosync upstream ...` (um 401 indica conta faltando no kosync).
-
-Por padrão, o registro fica desligado (`ENABLE_USER_REGISTRATION=false`). Ao usar o proxy Bookrats,
-a conta no kosync precisa ter o mesmo usuário e a mesma chave (MD5 da senha) de `users.kosync_*`
-no bookrats. Como alternativa ao cadastro pelo KOReader, crie direto no Redis, no **db 1** (o db do
-ambiente `production`):
+Por padrão, o registro fica desligado (`ENABLE_USER_REGISTRATION=false`). Como alternativa ao cadastro
+pelo KOReader, crie a conta direto no Redis, no **db 1** (o db do ambiente `production`). A chave é o MD5
+da senha, o mesmo valor que o KOReader envia:
 
 ```sh
-key=$(docker exec bookrats python -c "import sqlite3;print(sqlite3.connect('/data/bookrats.db').execute(\"select kosync_key from users where kosync_username='<usuario>'\").fetchone()[0])")
+key=$(printf %s '<senha>' | md5sum | cut -d' ' -f1)
 docker exec kosync redis-cli -n 1 SETNX user:<usuario>:key "$key"
 ```
 
@@ -184,8 +175,8 @@ O `#ko_md5` é o `document` que o dispositivo manda ao kosync, e cada um calcula
   ```
   (Com a GUI parada: ela mantém um cache e não veria a mudança.)
 - **Kindle** (KOReader, modo *binary*): *partial MD5* do conteúdo do arquivo no Kindle. Ele difere do arquivo da
-  biblioteca, porque o Calibre reescreve os metadados ao enviar. Esse hash chega pela sincronização sem fio do plugin
-  (ou à mão, a partir do `documents` do bookrats, que guarda título por hash). Essa sincronização **sobrescreve** o
+  biblioteca, porque o Calibre reescreve os metadados ao enviar. Esse hash chega pela sincronização sem fio do plugin.
+  Essa sincronização **sobrescreve** o
   `#ko_md5` com o hash do Kindle.
 
 A coluna guarda um hash por livro, então o Calibre acompanha um dispositivo por livro. Para unificar, o KOReader do

@@ -107,12 +107,6 @@
         href: https://lazylibrarian.{{HOMEPAGE_VAR_TS_DOMAIN}}
         server: local
         container: lazylibrarian
-    - Bookrats:
-        icon: koreader.png
-        href: https://bookrats.{{HOMEPAGE_VAR_TS_DOMAIN}}/app/
-        description: Leitura compartilhada (Funnel)
-        server: local
-        container: bookrats
     - KOSync:
         icon: koreader.png
         href: https://kosync.{{HOMEPAGE_VAR_TS_DOMAIN}}/healthcheck
