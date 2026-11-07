@@ -71,7 +71,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | shelfarr | 5056 | 80 |
 | lazylibrarian | 5299 | 5299 |
 | bookrats (leitura compartilhada, build do GitHub) | — (só Tailscale Funnel, público) | 8000 em loopback |
-| kosync (KOReader Sync Server oficial; o bookrats repassa os PUTs) | — (rede Docker e tailnet) | 17200 (HTTP), 7200 (HTTPS autoassinado) |
+| kosync (KOReader Sync Server oficial; o bookrats repassa os PUTs) | 17200 (HTTP, só no `HOST_LAN_IP`) | 17200 (HTTP), 7200 (HTTPS autoassinado) |
 | questarr | 5000 | 5000 |
 | hermes (Hermes Agent) | 9119 (dashboard), 8642 (API) | 9119, 8642 |
 | nextcloud (Postgres e Redis em 127.0.0.1, no namespace da sidecar) | 7580 | 80 |
@@ -123,14 +123,36 @@ gpg -d media-stack-<data>.tar.zst.gpg | zstd -d | tar -x
 
 ## KOSync (progresso do KOReader)
 
-O KOReader de todo mundo continua apontando para o bookrats (`https://bookrats.<tailnet>.ts.net`, pelo Funnel).
+Para usar diretamente na LAN, configure o servidor personalizado do KOReader como
+`http://<HOST_LAN_IP>:17200` (por exemplo, `http://192.168.100.35:17200`). A porta é publicada
+somente no IP definido por `HOST_LAN_IP`; a variável é obrigatória para evitar um bind acidental em
+todas as interfaces. O Kindle precisa estar na mesma rede e conseguir acessar esse IP. HTTP não
+cifra o tráfego: use apenas em rede confiável e não encaminhe essa porta no roteador.
+O acesso HTTPS pelo Tailscale continua disponível em `https://kosync.<tailnet>.ts.net`.
+
+Para cadastrar uma conta pelo KOReader, altere temporariamente `ENABLE_USER_REGISTRATION=false`
+para `ENABLE_USER_REGISTRATION=true` no `docker-compose.yml` desta stack e recrie a aplicação:
+
+```sh
+cd ~/my-servers-config/docker/stacks/kosync
+docker compose up -d --force-recreate kosync
+```
+
+Com um livro aberto, use **Sincronização de progresso → Registrar/Entrar** no KOReader.
+Depois de criar as contas necessárias, volte a variável para `false` e repita o comando;
+isso fecha novos cadastros sem apagar as contas existentes. Um simples `docker compose restart`
+não aplica alterações de variáveis de ambiente.
+
+Para a integração com o Bookrats, o KOReader pode continuar apontando para
+`https://bookrats.<tailnet>.ts.net`, pelo Funnel, enquanto o serviço Bookrats estiver ativo.
 O bookrats grava cada `PUT /syncs/progress` no SQLite dele e repassa o corpo para o kosync oficial
 (`BOOKRATS_KOSYNC_UPSTREAM=http://kosync_tailscale:17200`). Os `GET` leem do kosync primeiro e voltam para a
 cópia local se ele estiver fora ou não conhecer o documento. Se o repasse falhar, o KOReader não vê erro; o
 log do bookrats mostra `kosync upstream ...` (um 401 indica conta faltando no kosync).
 
-O registro fica desligado (`ENABLE_USER_REGISTRATION=false`). A conta no kosync precisa ter o mesmo usuário e
-a mesma chave (MD5 da senha) de `users.kosync_*` no bookrats. Crie direto no Redis, no **db 1** (o db do
+Por padrão, o registro fica desligado (`ENABLE_USER_REGISTRATION=false`). Ao usar o proxy Bookrats,
+a conta no kosync precisa ter o mesmo usuário e a mesma chave (MD5 da senha) de `users.kosync_*`
+no bookrats. Como alternativa ao cadastro pelo KOReader, crie direto no Redis, no **db 1** (o db do
 ambiente `production`):
 
 ```sh

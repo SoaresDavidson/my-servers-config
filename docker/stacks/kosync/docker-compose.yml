@@ -3,8 +3,10 @@ services:
     image: tailscale/tailscale:latest
     container_name: kosync_tailscale
     hostname: kosync
-    # Sem porta no host: o KOReader fala com o bookrats (Funnel), que repassa para ca pela
-    # rede Docker em http://kosync_tailscale:17200. No tailnet: https://kosync.<tailnet>.ts.net.
+    # HTTP direto na LAN para leitores sem Tailscale, como o Kindle.
+    # O bookrats pode continuar repassando pela rede Docker; HTTPS no tailnet segue igual.
+    ports:
+      - "${HOST_LAN_IP:?Defina HOST_LAN_IP no .env}:17200:17200/tcp"
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
@@ -38,7 +40,7 @@ services:
         condition: service_healthy
     environment:
       - TZ=${TZ}
-      # Contas sao criadas direto no Redis (ver README), espelhando users.kosync_* do bookrats.
+      # Para cadastrar pelo KOReader, habilite temporariamente e recrie o kosync (ver README).
       - ENABLE_USER_REGISTRATION=false
     volumes:
       # Redis embutido (AOF everysec + RDB) e logs. 7200 e HTTPS autoassinado; 17200 e HTTP puro.
