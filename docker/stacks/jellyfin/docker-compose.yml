@@ -36,10 +36,14 @@ services:
     depends_on:
       tailscale-jellyfin:
         condition: service_healthy
+    # GPU Intel para VA-API. Só aparece com o apple_set_os.efi no boot, e o número pode mudar se a NVIDIA for desligada.
+    devices:
+      - /dev/dri/renderD129:/dev/dri/renderD129
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - LIBVA_DRIVER_NAME=i965
     volumes:
       - ${CONFIG_HOST_PATH}/jellyfin/config:/config
       # Somente leitura: um arquivo malicioso que explore o ffmpeg não consegue mexer na biblioteca.
