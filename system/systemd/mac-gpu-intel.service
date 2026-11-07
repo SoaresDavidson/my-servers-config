@@ -1,0 +1,16 @@
+# Desliga a NVIDIA no boot e deixa a tela na Intel (ver sbin/mac-gpu-intel).
+# Instalar (depois de instalar system/sbin/mac-gpu-intel):
+#   sudo install -D -m 644 -o root -g root system/systemd/mac-gpu-intel.service /etc/systemd/system/mac-gpu-intel.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now mac-gpu-intel
+[Unit]
+Description=Desliga a NVIDIA e usa a Intel
+After=sys-kernel-debug.mount systemd-modules-load.service
+Before=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/mac-gpu-intel
+
+[Install]
+WantedBy=multi-user.target

@@ -12,6 +12,9 @@ Configurações do host (Debian 13) fora do Docker. Cada arquivo é copiado para
 | `default/` | `hd-idle` | `/etc/default/hd-idle` | Para o HD de mídia depois de 20 min sem I/O. Requer o pacote `hd-idle`. |
 | `systemd/powertop.service.d/` | `override.conf` | `/etc/systemd/system/powertop.service.d/override.conf` | Roda `powertop --auto-tune` no boot e depois `usb-keep-awake`. Requer `systemctl daemon-reload`. |
 | `sbin/` | `usb-keep-awake` | `/usr/local/sbin/usb-keep-awake` | Tira do autosuspend USB o HD de mídia e o adaptador de rede do dock (RTL8153, reserva), que o powertop teria colocado para dormir. |
+| `default/grub.d/` | `libata-noncq.cfg` | `/etc/default/grub.d/libata-noncq.cfg` | Desliga o NCQ do SSD interno, que trava sob carga com a fila em 32. Requer `sudo update-grub`. |
+| `sbin/` e `systemd/` | `mac-gpu-intel`, `mac-gpu-intel.service` | `/usr/local/sbin/mac-gpu-intel`, `/etc/systemd/system/mac-gpu-intel.service` | Desliga a NVIDIA no boot e deixa a tela na Intel. |
+| `sbin/` e `systemd/` | `mac-prochot-off`, `mac-prochot-off.service` | `/usr/local/sbin/mac-prochot-off`, `/etc/systemd/system/mac-prochot-off.service` | Faz a CPU ignorar o PROCHOT externo, que a prende em 800 MHz, e desliga o turbo para limitar o calor. Requer o pacote `msr-tools`. |
 | `systemd/` | `hermes-gateway-471fd707.service` | `/etc/systemd/system/hermes-gateway-471fd707.service` | Gateway do Hermes Agent direto no host, com `User=davi`. Ver [Hermes](#hermes). |
 | `systemd/user/` | `vagas-linkedin-consumer.service` | `~/.config/systemd/user/vagas-linkedin-consumer.service` | Consumidor Pub/Sub do Gmail em serviço de usuário com linger ativo. Ver [Vagas do LinkedIn](#vagas-do-linkedin). |
 | `systemd/` | `vagas-linkedin-consumer.service` | `/etc/systemd/system/vagas-linkedin-consumer.service` | Alternativa de serviço de sistema, não habilitar simultaneamente ao serviço de usuário. |
@@ -77,6 +80,8 @@ dormindo os serviços somem, inclusive o DNS do AdGuard. A economia vem de cada 
 - **USB/SATA/PCIe/áudio**: `powertop --auto-tune` (`systemd/powertop.service.d/`), exceto HD e rede USB reserva. A rede principal (`ens9`, Thunderbolt) é PCIe e não entra no autosuspend USB.
 - **Ventoinhas**: `mbpfan` controla as ventoinhas pela temperatura (módulos `applesmc` e `coretemp`).
   Usa o `/etc/mbpfan.conf` padrão do pacote: `sudo apt install mbpfan && sudo systemctl enable --now mbpfan`.
+- **GPU**: a NVIDIA fica desligada (`sbin/mac-gpu-intel`), e a Intel, que depende do `apple_set_os.efi` na entrada `Boot0005`, serve a tela e o VA-API do Jellyfin.
+- **CPU presa em 800 MHz**: um PROCHOT externo de origem desconhecida limita a CPU (`sbin/mac-prochot-off`). Se o servidor ficar lento, meça a frequência sob carga, não em repouso.
 
 Se trocar o adaptador de rede ou o HD, atualize os IDs em `sbin/usb-keep-awake` (`lsusb`) e o caminho
 by-id em `default/hd-idle` (`ls /dev/disk/by-id/`).

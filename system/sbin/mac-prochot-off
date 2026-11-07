@@ -1,0 +1,42 @@
+#!/bin/sh
+# Faz a CPU ignorar o sinal PROCHOT externo (bit 0 do MSR 0x1FC). O sinal prende todos os núcleos em
+# 800 MHz sem a CPU estar superaquecida, e a origem ainda é desconhecida (issue #7). A CPU mantém a
+# proteção térmica própria, mas a placa perde esse aviso. Requer o pacote msr-tools.
+# Também desliga o turbo, que limita a CPU à base de 2,8 GHz: sem ele, a subida dos contêineres levava
+# a CPU a 99 °C. Até a limpeza da issue #7, isso troca desempenho de pico por menos calor.
+# Roda no boot (ver systemd/mac-prochot-off.service).
+# Instalar:
+#   sudo apt install msr-tools
+#   sudo install -m 755 -o root -g root system/sbin/mac-prochot-off /usr/local/sbin/mac-prochot-off
+set -eu
+
+# Temperatura do pacote da CPU em °C, ou vazio se o sensor não estiver disponível.
+package_temp() {
+  for hwmon in /sys/class/hwmon/hwmon*; do
+    if [ "$(cat "$hwmon/name" 2>/dev/null)" = coretemp ]; then
+      echo $(($(cat "$hwmon/temp1_input") / 1000))
+      return 0
+    fi
+  done
+}
+
+# Retorna 0 para ignorar o PROCHOT neste boot, ou 1 para manter o limite de 800 MHz.
+should_clear_prochot() {
+  temp="$(package_temp)"
+  # Sem sensor não dá para saber o estado da máquina: fica lenta, mas protegida.
+  [ -n "$temp" ] || return 1
+  # Parada, ela fica em ~58-70 °C; acima disso já há um problema real de calor.
+  [ "$temp" -lt 80 ]
+}
+
+modprobe -a msr coretemp
+
+if ! should_clear_prochot; then
+  echo "PROCHOT mantido (temperatura: ${temp:-desconhecida} °C)"
+  exit 0
+fi
+
+value="$(rdmsr -c 0x1fc)"
+wrmsr -a 0x1fc "$((value & ~1))"
+echo 1 > /sys/devices/system/cpu/intel_pstate/no_turbo
+echo "PROCHOT ignorado e turbo desligado (temperatura: ${temp:-desconhecida} °C)"

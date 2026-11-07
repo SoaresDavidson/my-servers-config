@@ -1,0 +1,26 @@
+#!/bin/sh
+# Passa a tela para a Intel e desliga a NVIDIA, que sozinha gasta ~11 W e aquece a CPU em ~11 °C, porque as
+# duas dividem o dissipador. A Intel só existe com o apple_set_os.efi no boot; sem ela, nada é feito.
+# O nouveau continua carregado de propósito: sem ele a Intel mudaria de renderD129 para renderD128, e o
+# compose do Jellyfin depende desse número.
+# Roda no boot (ver systemd/mac-gpu-intel.service).
+# Instalar:
+#   sudo install -m 755 -o root -g root system/sbin/mac-gpu-intel /usr/local/sbin/mac-gpu-intel
+set -eu
+
+SWITCH=/sys/kernel/debug/vgaswitcheroo/switch
+
+# Os drivers das duas GPUs podem terminar de carregar depois do início do serviço.
+tries=0
+until grep -q IGD "$SWITCH" 2>/dev/null && grep -q 'DIS:' "$SWITCH" 2>/dev/null; do
+  tries=$((tries + 1))
+  if [ "$tries" -ge 30 ]; then
+    echo "vgaswitcheroo sem as duas GPUs; a Intel apareceu no boot?" >&2
+    exit 0
+  fi
+  sleep 1
+done
+
+echo IGD > "$SWITCH"
+echo OFF > "$SWITCH"
+cat "$SWITCH"

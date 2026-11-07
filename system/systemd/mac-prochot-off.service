@@ -1,0 +1,16 @@
+# Ignora o PROCHOT externo no boot, antes de os contêineres subirem (ver sbin/mac-prochot-off).
+# Instalar (depois de instalar system/sbin/mac-prochot-off):
+#   sudo install -D -m 644 -o root -g root system/systemd/mac-prochot-off.service /etc/systemd/system/mac-prochot-off.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now mac-prochot-off
+[Unit]
+Description=Ignora o sinal PROCHOT externo
+After=systemd-modules-load.service
+Before=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/mac-prochot-off
+
+[Install]
+WantedBy=multi-user.target
