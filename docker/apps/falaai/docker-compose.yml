@@ -1,0 +1,57 @@
+# Fala Aí: newsletters do Gmail viram um podcast diário. Código em github.com/SoaresDavidson/falaAi,
+# clonado em FALAAI_SRC (imagem de build local). Ollama e Kokoro rodam no laptop, pela tailnet.
+services:
+  tailscale-falaai:
+    image: tailscale/tailscale:latest
+    container_name: falaai_tailscale
+    hostname: falaai
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts-serve.json
+      - TS_USERSPACE=false
+    volumes:
+      - ${CONFIG_HOST_PATH}/tailscale/falaai:/var/lib/tailscale
+      - ./ts-serve.json:/config/ts-serve.json:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep tailscaled"]
+      interval: 2m
+      timeout: 5s
+      retries: 3
+    networks:
+      - media-network
+
+  falaai:
+    build: ${FALAAI_SRC:-/home/davi/falaAi}
+    image: falaai:latest
+    container_name: falaai
+    # O Prometheus coleta em falaai_tailscale:8000 pela medianet.
+    network_mode: service:tailscale-falaai
+    depends_on:
+      tailscale-falaai:
+        condition: service_healthy
+    environment:
+      - FALAAI_DATA_DIR=/data
+      - FALAAI_FEED_BASE_URL=https://falaai.${TS_DOMAIN}
+      - FALAAI_OLLAMA_URL=http://100.74.37.102:11434
+      - FALAAI_OLLAMA_MODELO=qwen3:30b-a3b-instruct-2507-q4_K_M
+      - FALAAI_TTS_URL=http://100.74.37.102:8880
+      - FALAAI_GMAIL_ROTULO=newsletter
+      - FALAAI_MAX_MINUTOS=15
+      - FALAAI_PALAVRAS_POR_MINUTO=150
+      - FALAAI_PAUSA_MS=300
+      - FALAAI_TEXTO_MAX_CHARS=30000
+    volumes:
+      # Banco, episódios e gmail-token.json (dono 1000:1000).
+      - ${CONFIG_HOST_PATH}/falaai:/data
+    restart: unless-stopped
+
+networks:
+  media-network:
+    name: ${NETWORK_NAME}
+    external: true

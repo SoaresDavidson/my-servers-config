@@ -7,7 +7,7 @@ Uma stack por serviço (exceto `shared` e `backup`, ver abaixo), agrupadas por a
 | `media/` | jellyfin, jellyseerr, sonarr, radarr, lidarr, prowlarr, bazarr, profilarr, qbittorrent, questarr |
 | `books/` | calibre, bookshelf, shelfarr, lazylibrarian, kosync |
 | `server/` | shared, adguard, backup, prometheus, dozzle, homepage, clamav |
-| `apps/` | nextcloud (com o onlyoffice) |
+| `apps/` | nextcloud (com o onlyoffice), falaai |
 
 O nome da pasta da stack (não o do grupo) continua sendo o nome do projeto no Compose, então mover uma
 stack de grupo não muda os nomes dos containers. Os grupos ficam direto em `docker/` e os scripts percorrem `docker/*/*/`. Em geral, cada diretório tem:
@@ -124,6 +124,7 @@ o script retorna erro ao final para registrar a falha.
 | nextcloud → onlyoffice (editor de documentos, mesma stack) | — (tailnet e rede Docker) | 80 |
 | homepage (dashboard dos apps) | 80 e 3000 | 3000 |
 | dozzle (logs dos containers) | 8888 | 8080 |
+| falaai (podcast das newsletters, imagem de build local) | — (só tailnet: `https://falaai.<tailnet>.ts.net`) | 8000 |
 | prometheus (métricas, sem Tailscale) | 9091 (HTTP, só no `HOST_LAN_IP`) | 9090 |
 | node-exporter (métricas do host, rede do host) | 9100 (HTTP, só no `HOST_LAN_IP`) | 9100 |
 | grafana (gráficos do Prometheus, mesma stack) | 3001 (HTTP, só no `HOST_LAN_IP`) | 3000 |
@@ -332,3 +333,12 @@ No Jellyfin o mount é `:ro`; por isso as bibliotecas estão com *salvar metadad
 desligados, e isso fica em `/config`.
 
 Shelfarr é exceção: usa binds separados (`/downloads`, `/ebooks`, `/audiobooks`) porque a imagem espera esses caminhos e move o arquivo em vez de fazer hardlink.
+
+## Fala Aí
+
+A stack `apps/falaai` constrói a imagem a partir do código em `FALAAI_SRC` (padrão `/home/davi/falaAi`,
+clone de github.com/SoaresDavidson/falaAi): o `update` ignora essa imagem, então depois de um `git pull`
+lá rode `docker compose up -d --build` aqui. Banco, episódios e o `gmail-token.json` ficam em
+`${CONFIG_HOST_PATH}/falaai` (dono 1000:1000) e entram no backup. Ollama e Kokoro rodam no laptop,
+pela tailnet; setup do laptop e uso no README do falaAi. O Prometheus coleta em `falaai_tailscale:8000`
+pela medianet, e os alertas ficam em `grafana/provisioning/alerting/falaai-alertas.yaml`.
