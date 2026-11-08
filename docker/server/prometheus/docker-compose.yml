@@ -23,8 +23,37 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    extra_hosts:
+      # O node-exporter roda na rede do host; o prometheus.yml não expande variáveis,
+      # então o IP da LAN entra aqui como um nome fixo.
+      - "host-lan:${HOST_LAN_IP}"
     networks:
       - media-network
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    labels:
+      - autoheal=true
+    # Rede e PID do host: métricas da ens9 e dos processos reais, não as do container.
+    network_mode: host
+    pid: host
+    command:
+      - --path.rootfs=/host
+      - --web.listen-address=${HOST_LAN_IP:?Defina HOST_LAN_IP}:9100
+      - --collector.systemd
+      - --collector.systemd.unit-include=(mac-.+|mbpfan|powertop|hd-idle|docker|tailscaled|hermes-gateway-.+)\.service
+    volumes:
+      # rslave: discos montados depois da subida (HD de mídia) também aparecem.
+      - /:/host:ro,rslave
+      - /run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://${HOST_LAN_IP}:9100/metrics"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 networks:
   media-network:
