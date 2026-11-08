@@ -1,0 +1,14 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    # Mesma rede Docker: o Grafana fala com o container, não com a porta 9091 da LAN.
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      # Igual ao scrape_interval do prometheus.yml, para o $__rate_interval ficar certo.
+      timeInterval: 15s

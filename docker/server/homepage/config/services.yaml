@@ -144,6 +144,61 @@
           url: http://adguard_tailscale:80
           username: {{HOMEPAGE_VAR_ADGUARD_USER}}
           password: {{HOMEPAGE_VAR_ADGUARD_PASSWORD}}
+    - Prometheus:
+        icon: prometheus.png
+        href: http://{{HOMEPAGE_VAR_HOST_LAN_IP}}:9091
+        description: Métricas (só LAN)
+        server: local
+        container: prometheus
+        widget:
+          type: prometheus
+          url: http://prometheus:9090
+    - Grafana:
+        icon: grafana.png
+        href: http://{{HOMEPAGE_VAR_HOST_LAN_IP}}:3001
+        description: Gráficos das métricas (só LAN)
+        server: local
+        container: grafana
+    # Métricas do node-exporter que acompanham os problemas conhecidos do MacBook:
+    # CPU presa em 800 MHz (PROCHOT), aquecimento e a curva do mbpfan.
+    - Servidor:
+        icon: mdi-laptop
+        href: http://{{HOMEPAGE_VAR_HOST_LAN_IP}}:9091/query
+        description: MacBook (node-exporter)
+        server: local
+        container: node-exporter
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          refreshInterval: 15000
+          metrics:
+            - label: CPU
+              query: 100 * (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[1m])))
+              format:
+                type: percent
+                options:
+                  maximumFractionDigits: 0
+            - label: Clock
+              query: avg(node_cpu_scaling_frequency_hertz) / 1e6
+              format:
+                type: number
+                suffix: " MHz"
+                options:
+                  maximumFractionDigits: 0
+            - label: Temp
+              query: max(node_hwmon_temp_celsius{chip=~".*coretemp.*"})
+              format:
+                type: number
+                suffix: " °C"
+                options:
+                  maximumFractionDigits: 0
+            - label: Fan
+              query: max(node_hwmon_fan_rpm)
+              format:
+                type: number
+                suffix: " rpm"
+                options:
+                  maximumFractionDigits: 0
     - Backup:
         icon: mdi-backup-restore
         description: Backup diário às 03:00

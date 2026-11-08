@@ -48,7 +48,7 @@ services:
       READARR: >
         [{"base_url": "http://bookshelf_tailscale:8787", "api_key": "${HOMEPAGE_VAR_BOOKSHELF_KEY}"}]
       QBITTORRENT: >
-        [{"base_url": "http://qbittorrent:8080", "username": "${QBITTORRENT_USERNAME}", "password": "${QBITTORRENT_PASSWORD}"}]
+        [{"base_url": "http://qbittorrent:8080", "username": "${QBITTORRENT_USERNAME:?defina QBITTORRENT_USERNAME no .env}", "password": "${QBITTORRENT_PASSWORD:?defina QBITTORRENT_PASSWORD no .env}"}]
     volumes:
       # Mesmo /data dos *arr, so leitura, para o job detect_deletions enxergar a biblioteca.
       - ${DATA_HOST_PATH}:/data:ro

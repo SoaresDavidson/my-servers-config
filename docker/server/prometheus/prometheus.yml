@@ -6,3 +6,10 @@ scrape_configs:
   - job_name: prometheus
     static_configs:
       - targets: ["localhost:9090"]
+
+  - job_name: node
+    static_configs:
+      # host-lan é o HOST_LAN_IP, via extra_hosts no docker-compose.yml.
+      - targets: ["host-lan:9100"]
+        labels:
+          instance: macbook
