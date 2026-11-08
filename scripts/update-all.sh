@@ -15,8 +15,6 @@ failed_stacks=""
 
 for stack in "$STACKS_DIR"/*/*/; do
   name=$(basename "$stack")
-  # Hermes agora roda no host; imagens com build local não vêm do registry.
-  [ "$name" = hermes ] && continue
   [ -f "$stack/docker-compose.yml" ] || continue
   printf '%s\n' "Baixando imagens da stack $name..."
   if ! docker compose --env-file "$ENV_FILE" -f "$stack/docker-compose.yml" pull --ignore-buildable; then

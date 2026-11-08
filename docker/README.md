@@ -7,7 +7,7 @@ Uma stack por serviço (exceto `shared` e `backup`, ver abaixo), agrupadas por a
 | `media/` | jellyfin, jellyseerr, sonarr, radarr, lidarr, prowlarr, bazarr, profilarr, qbittorrent, questarr |
 | `books/` | calibre, bookshelf, shelfarr, lazylibrarian, kosync |
 | `server/` | shared, adguard, backup, prometheus, dozzle, homepage, clamav |
-| `apps/` | nextcloud (com o onlyoffice), hermes |
+| `apps/` | nextcloud (com o onlyoffice) |
 
 O nome da pasta da stack (não o do grupo) continua sendo o nome do projeto no Compose, então mover uma
 stack de grupo não muda os nomes dos containers. Os grupos ficam direto em `docker/` e os scripts percorrem `docker/*/*/`. Em geral, cada diretório tem:
@@ -57,7 +57,7 @@ sudo install -m 644 -o root -g root system/cron.d/docker-update /etc/cron.d/dock
 
 O `up-all.sh` também compara a imagem de cada container com a imagem local da mesma tag:
 após um pull, recria stacks com imagens novas mesmo se estiverem saudáveis e sem alterações
-no compose. O download ignora imagens de build local e a stack Hermes migrada para o host.
+no compose. O download ignora imagens de build local.
 Se o download de uma stack falhar, as demais continuam e as imagens disponíveis são aplicadas;
 o script retorna erro ao final para registrar a falha.
 
@@ -90,7 +90,6 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | lazylibrarian | 5299 | 5299 |
 | kosync (KOReader Sync Server oficial) | 17200 (HTTP, só no `HOST_LAN_IP`) | 17200 (HTTP), 7200 (HTTPS autoassinado) |
 | questarr | 5000 | 5000 |
-| hermes (Hermes Agent) | 9119 (dashboard), 8642 (API) | 9119, 8642 |
 | nextcloud (Postgres e Redis em 127.0.0.1, no namespace da sidecar) | 7580 | 80 |
 | nextcloud → onlyoffice (editor de documentos, mesma stack) | — (tailnet e rede Docker) | 80 |
 | homepage (dashboard dos apps) | 3000 | 3000 |

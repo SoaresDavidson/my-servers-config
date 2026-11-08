@@ -43,7 +43,7 @@ Se o Hermes atualizar node/npm em `tools/` e o status acusar unit desatualizada,
 `sudo HERMES_HOME=$HERMES_HOME hermes gateway install --system --run-as-user davi --force` e copie
 `/etc/systemd/system/hermes-gateway-471fd707.service` de volta para cá.
 
-O `scripts/up-all.sh` ignora a stack `docker/apps/hermes`; não a suba manualmente. Mantenha apenas
+A antiga stack Docker do Hermes foi removida. Mantenha apenas
 um gateway ativo: se o serviço de usuário antigo estiver habilitado, desative-o com
 `systemctl --user disable --now hermes-gateway.service` e confira o serviço de sistema com
 `hermes gateway status --system`. Dois gateways no mesmo bot do Discord disputam as mensagens.

@@ -1,6 +1,6 @@
 # apt update 10 minutos antes do backup (offen roda às 03:00, ver docker/server/backup)
 # e grava a lista de pacotes atualizáveis em /var/lib/host-status/apt-upgradable.txt,
-# montado read-only no hermes em /opt/host (ver docker/apps/hermes).
+# lida pelo Hermes, que roda no host (ver system/README.md, seção Hermes).
 # Instalar: sudo install -m 644 -o root -g root system/cron.d/apt-update /etc/cron.d/apt-update
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
