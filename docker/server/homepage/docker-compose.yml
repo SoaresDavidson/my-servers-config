@@ -4,6 +4,8 @@ services:
     container_name: homepage_tailscale
     hostname: homepage
     ports:
+      # Dashboard da LAN na porta 80; a 3000 fica para links antigos.
+      - "80:3000"
       - "3000:3000"
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
@@ -39,8 +41,8 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-      # Hosts aceitos no header Host: nome no tailnet e acesso direto pela LAN.
-      - HOMEPAGE_ALLOWED_HOSTS=homepage.${TS_DOMAIN},${HOST_LAN_IP}:3000
+      # Hosts aceitos no header Host: nome no tailnet e acesso direto pela LAN (porta 80 e 3000).
+      - HOMEPAGE_ALLOWED_HOSTS=homepage.${TS_DOMAIN},${HOST_LAN_IP},${HOST_LAN_IP}:3000
       - HOMEPAGE_VAR_TS_DOMAIN=${TS_DOMAIN}
       - HOMEPAGE_VAR_HOST_LAN_IP=${HOST_LAN_IP}
       - HOMEPAGE_VAR_SONARR_KEY=${HOMEPAGE_VAR_SONARR_KEY:-}

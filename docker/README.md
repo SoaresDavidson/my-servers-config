@@ -81,7 +81,7 @@ o script retorna erro ao final para registrar a falha.
 | questarr | 5000 | 5000 |
 | nextcloud (Postgres e Redis em 127.0.0.1, no namespace da sidecar) | 7580 | 80 |
 | nextcloud → onlyoffice (editor de documentos, mesma stack) | — (tailnet e rede Docker) | 80 |
-| homepage (dashboard dos apps) | 3000 | 3000 |
+| homepage (dashboard dos apps) | 80 e 3000 | 3000 |
 | dozzle (logs dos containers) | 8888 | 8080 |
 | prometheus (métricas, sem Tailscale) | 9091 (HTTP, só no `HOST_LAN_IP`) | 9090 |
 | adguard (DNS com bloqueio de anúncios) | 3080 (web), 53 tcp/udp no `HOST_LAN_IP` (DNS) | 80, 53 |
