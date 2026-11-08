@@ -7,7 +7,7 @@ Uma stack por serviço (exceto `shared` e `backup`, ver abaixo), agrupadas por a
 | `media/` | jellyfin, jellyseerr, sonarr, radarr, lidarr, prowlarr, bazarr, profilarr, qbittorrent, questarr |
 | `books/` | calibre, bookshelf, shelfarr, lazylibrarian, kosync |
 | `server/` | shared, adguard, backup, prometheus, dozzle, homepage, clamav |
-| `apps/` | nextcloud (com o onlyoffice) |
+| `apps/` | nextcloud (com o onlyoffice), falaai |
 
 O nome da pasta da stack (não o do grupo) continua sendo o nome do projeto no Compose, então mover uma
 stack de grupo não muda os nomes dos containers. Os grupos ficam direto em `docker/` e os scripts percorrem `docker/*/*/`. Em geral, cada diretório tem:
@@ -40,13 +40,31 @@ avisam num canal do Discord pelo webhook de `DISCORD_WEBHOOK_URL`: CPU presa em 
 (PROCHOT), CPU acima de 90 °C, disco acima de 90%, HD de mídia (`/mnt/midia`) desmontado ou só
 leitura, serviço do systemd em `failed`, container
 reiniciando em loop e exporter fora do ar. Regras provisionadas não podem ser editadas pela
-interface: mude o `rules.yml` e reinicie o Grafana. Nos templates do arquivo, escreva `$$labels`
-e `$$values`, porque o Grafana expande `$VAR` do ambiente nesses arquivos.
+interface: mude o `rules.yml` e reinicie o Grafana. Nos templates do arquivo, escreva `.Labels` e
+`.Values` em vez de `$labels` e `$values`: o Grafana expande `$VAR` do ambiente nesses arquivos, e o
+escape `$$` chega literal na mensagem. O banco SQLite roda em modo WAL (`GF_DATABASE_WAL`), para
+que a avaliação dos alertas não falhe com "database is locked" quando o disco está ocupado.
 
 As métricas por container (CPU, memória, rede e I/O) vêm do `cadvisor`, também nessa stack,
 sem porta publicada. Ele varre os containers a cada 30s e não mede o espaço em disco de cada
 um (o `du` por camada é caro), para poupar a CPU. Precisa dos sockets do Docker e do containerd:
 sem o do containerd, as versões novas não enxergam nenhum container.
+
+Os logs dos containers vão para o `loki`, também nessa stack e sem porta publicada. Quem coleta é o
+`alloy`, que lê o log de cada container pelo socket do Docker (`server/prometheus/config.alloy`) e o envia
+ao Loki com os rótulos `container`, `service_name`, `compose_project` e `stream`. O Loki guarda 15 dias em
+`${CONFIG_HOST_PATH}/loki` (configuração em `server/prometheus/loki.yml`), e o Alloy guarda até onde já leu
+em `${CONFIG_HOST_PATH}/alloy`. Os dois diretórios precisam existir antes da primeira subida, o do Loki com
+permissão de escrita para `PUID:PGID`. O datasource `Loki` vem provisionado no Grafana: consulte em
+Explore ou em Drilldown → Logs, por exemplo `{container="jellyfin"} |= "error"`. O Dozzle continua
+sendo o caminho rápido para acompanhar um log ao vivo. A imagem do Loki é distroless (sem shell nem wget),
+então ele não tem healthcheck. O Alloy não tem wget nem curl, e o healthcheck dele usa o `bash`.
+
+As imagens PNG de painéis (Share → Link → Render image) vêm do `grafana-renderer`, um Chromium
+headless na mesma stack, sem porta publicada. Ele abre o painel pelo `http://grafana:3000/` e devolve
+o print. Os dois se autenticam com `GRAFANA_RENDERER_TOKEN`: com o token padrão, o Grafana se recusa
+a iniciar. Não instale o plugin `grafana-image-renderer` com o `grafana cli`, porque a imagem do
+Grafana não tem o Chromium que ele precisa.
 
 Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `scripts/setup-env.sh`.
 
@@ -106,10 +124,14 @@ o script retorna erro ao final para registrar a falha.
 | nextcloud → onlyoffice (editor de documentos, mesma stack) | — (tailnet e rede Docker) | 80 |
 | homepage (dashboard dos apps) | 80 e 3000 | 3000 |
 | dozzle (logs dos containers) | 8888 | 8080 |
+| falaai (podcast das newsletters, imagem de build local) | — (só tailnet: `https://falaai.<tailnet>.ts.net`) | 8000 |
 | prometheus (métricas, sem Tailscale) | 9091 (HTTP, só no `HOST_LAN_IP`) | 9090 |
 | node-exporter (métricas do host, rede do host) | 9100 (HTTP, só no `HOST_LAN_IP`) | 9100 |
 | grafana (gráficos do Prometheus, mesma stack) | 3001 (HTTP, só no `HOST_LAN_IP`) | 3000 |
 | cadvisor (métricas por container, mesma stack) | — (só rede Docker) | 8080 |
+| loki (logs dos containers, mesma stack) | — (só rede Docker) | 3100 |
+| alloy (coletor de logs para o Loki, mesma stack) | — | 12345 (só no container) |
+| grafana-renderer (PNG de painéis, mesma stack) | — (só rede Docker) | 8081 |
 | adguard (DNS com bloqueio de anúncios) | 3080 (web), 53 tcp/udp no `HOST_LAN_IP` (DNS) | 80, 53 |
 | shared (flaresolverr, decluttarr, autoheal) | — | — |
 | clamav (antivírus dos downloads) | — | — |
@@ -311,3 +333,12 @@ No Jellyfin o mount é `:ro`; por isso as bibliotecas estão com *salvar metadad
 desligados, e isso fica em `/config`.
 
 Shelfarr é exceção: usa binds separados (`/downloads`, `/ebooks`, `/audiobooks`) porque a imagem espera esses caminhos e move o arquivo em vez de fazer hardlink.
+
+## Fala Aí
+
+A stack `apps/falaai` constrói a imagem a partir do código em `FALAAI_SRC` (padrão `/home/davi/falaAi`,
+clone de github.com/SoaresDavidson/falaAi): o `update` ignora essa imagem, então depois de um `git pull`
+lá rode `docker compose up -d --build` aqui. Banco, episódios e o `gmail-token.json` ficam em
+`${CONFIG_HOST_PATH}/falaai` (dono 1000:1000) e entram no backup. Ollama e Kokoro rodam no laptop,
+pela tailnet; setup do laptop e uso no README do falaAi. O Prometheus coleta em `falaai_tailscale:8000`
+pela medianet, e os alertas ficam em `grafana/provisioning/alerting/falaai-alertas.yaml`.

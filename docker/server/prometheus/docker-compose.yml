@@ -92,6 +92,54 @@ services:
     networks:
       - media-network
 
+  # Logs dos containers, guardados para consulta no Grafana. Sem porta publicada: o Alloy
+  # envia e o Grafana consulta pela rede Docker.
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    user: "${PUID:?Defina PUID}:${PGID:?Defina PGID}"
+    labels:
+      - docker-volume-backup.stop-during-backup=true
+    command:
+      - -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./loki.yml:/etc/loki/loki.yml:ro
+      - ${CONFIG_HOST_PATH:?Defina CONFIG_HOST_PATH}/loki:/loki
+    restart: unless-stopped
+    # Sem healthcheck: a imagem é distroless, sem shell nem wget.
+    networks:
+      - media-network
+
+  # Coletor: lê o log de cada container pelo socket do Docker e envia ao Loki.
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    labels:
+      - autoheal=true
+    depends_on:
+      - loki
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+      - --disable-reporting
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      # Posição de leitura de cada container: sem ela, cada recriação reenviaria o log todo.
+      - ${CONFIG_HOST_PATH:?Defina CONFIG_HOST_PATH}/alloy:/var/lib/alloy/data
+      # Acesso total ao Docker, mesmo montado :ro.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    healthcheck:
+      # A imagem não tem wget nem curl; o bash fala HTTP com a interface local do Alloy.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/12345 && printf 'GET /-/ready HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q ' 200 ' <&3"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - media-network
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -101,6 +149,8 @@ services:
       - docker-volume-backup.stop-during-backup=true
     depends_on:
       - prometheus
+      - loki
+      - grafana-renderer
     ports:
       # 3000 já é usada pelo homepage.
       - "${HOST_LAN_IP:?Defina HOST_LAN_IP}:3001:3000"
@@ -112,10 +162,18 @@ services:
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
       - GF_NEWS_NEWS_FEED_ENABLED=false
+      # SQLite em modo WAL: leituras não esperam escritas. Sem isso, com o disco ocupado, a avaliação
+      # dos alertas falhava com "database is locked" e disparava DatasourceError no Discord.
+      - GF_DATABASE_WAL=true
       # Lido pelo provisioning/alerting/contact-points.yml.
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:?Defina DISCORD_WEBHOOK_URL}
+      # PNG de painéis via serviço externo; o callback é como o renderer volta ao Grafana pela rede interna.
+      - GF_RENDERING_SERVER_URL=http://grafana-renderer:8081/render
+      - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
+      # O Grafana recusa iniciar com o token padrão "-"; tem que ser igual ao AUTH_TOKEN do renderer.
+      - GF_RENDERING_RENDERER_TOKEN=${GRAFANA_RENDERER_TOKEN:?Defina GRAFANA_RENDERER_TOKEN}
     volumes:
-      # Datasource do Prometheus versionado; dashboards e usuários ficam no banco em /var/lib/grafana.
+      # Datasources do Prometheus e do Loki versionados; dashboards e usuários ficam no banco em /var/lib/grafana.
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ${CONFIG_HOST_PATH:?Defina CONFIG_HOST_PATH}/grafana:/var/lib/grafana
     restart: unless-stopped
@@ -125,6 +183,16 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    networks:
+      - media-network
+
+  # Chromium headless que gera os PNGs para o Grafana; sem porta publicada, só a rede interna o acessa.
+  grafana-renderer:
+    image: grafana/grafana-image-renderer:latest
+    container_name: grafana-renderer
+    environment:
+      - AUTH_TOKEN=${GRAFANA_RENDERER_TOKEN:?Defina GRAFANA_RENDERER_TOKEN}
+    restart: unless-stopped
     networks:
       - media-network
 
