@@ -28,6 +28,13 @@ serviços systemd da máquina (`mac-*`, `mbpfan`, `hd-idle`...). Os dados persis
 crie esse diretório com permissão de escrita para `PUID:PGID`. Não há autenticação nem
 TLS nesta publicação: use somente na LAN confiável, sem encaminhar a porta no roteador.
 
+Na mesma stack, o `grafana` publica a porta 3001 no `HOST_LAN_IP` (a 3000 é do homepage), com
+login `admin` e a senha de `GRAFANA_ADMIN_PASSWORD`, aplicada só na criação do banco. O
+datasource do Prometheus vem provisionado de `server/prometheus/grafana/provisioning/`;
+dashboards e usuários ficam em `${CONFIG_HOST_PATH}/grafana`, que também precisa existir com
+permissão de escrita para `PUID:PGID` antes da primeira subida. Para os gráficos do host,
+importe o dashboard 1860 (Node Exporter Full) em Dashboards → New → Import.
+
 Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `scripts/setup-env.sh`.
 
 Se a sidecar reinicia depois do app (boot lento, por exemplo), o app fica preso num network namespace órfão, só com `lo`, e para de responder pela LAN e pelo tailnet. Por isso o healthcheck de cada app começa com `test -e /sys/class/net/eth0`, e o label `autoheal=true` deixa o `autoheal` (stack `shared`) reiniciar o app, que volta já no namespace atual da sidecar. A imagem do dozzle é `scratch` (sem shell), então o healthcheck dela é só `/dozzle healthcheck` e não detecta o namespace órfão; se o dozzle sumir da rede depois de um reinício da sidecar, reinicie-o à mão. (Montar o busybox via volume `type: image` resolveria; não foi feito porque o CasaOS, já removido, não validava esse compose.)
@@ -88,6 +95,7 @@ o script retorna erro ao final para registrar a falha.
 | dozzle (logs dos containers) | 8888 | 8080 |
 | prometheus (métricas, sem Tailscale) | 9091 (HTTP, só no `HOST_LAN_IP`) | 9090 |
 | node-exporter (métricas do host, rede do host) | 9100 (HTTP, só no `HOST_LAN_IP`) | 9100 |
+| grafana (gráficos do Prometheus, mesma stack) | 3001 (HTTP, só no `HOST_LAN_IP`) | 3000 |
 | adguard (DNS com bloqueio de anúncios) | 3080 (web), 53 tcp/udp no `HOST_LAN_IP` (DNS) | 80, 53 |
 | shared (flaresolverr, decluttarr, autoheal) | — | — |
 | clamav (antivírus dos downloads) | — | — |

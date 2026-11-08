@@ -153,6 +153,12 @@
         widget:
           type: prometheus
           url: http://prometheus:9090
+    - Grafana:
+        icon: grafana.png
+        href: http://{{HOMEPAGE_VAR_HOST_LAN_IP}}:3001
+        description: Gráficos das métricas (só LAN)
+        server: local
+        container: grafana
     # Métricas do node-exporter que acompanham os problemas conhecidos do MacBook:
     # CPU presa em 800 MHz (PROCHOT), aquecimento e a curva do mbpfan.
     - Servidor:

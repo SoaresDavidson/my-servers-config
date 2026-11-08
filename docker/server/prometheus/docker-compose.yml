@@ -55,6 +55,40 @@ services:
       retries: 3
       start_period: 10s
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    user: "${PUID:?Defina PUID}:${PGID:?Defina PGID}"
+    labels:
+      - autoheal=true
+      - docker-volume-backup.stop-during-backup=true
+    depends_on:
+      - prometheus
+    ports:
+      # 3000 já é usada pelo homepage.
+      - "${HOST_LAN_IP:?Defina HOST_LAN_IP}:3001:3000"
+    environment:
+      - TZ=${TZ}
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?Defina GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_NEWS_NEWS_FEED_ENABLED=false
+    volumes:
+      # Datasource do Prometheus versionado; dashboards e usuários ficam no banco em /var/lib/grafana.
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${CONFIG_HOST_PATH:?Defina CONFIG_HOST_PATH}/grafana:/var/lib/grafana
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - media-network
+
 networks:
   media-network:
     name: ${NETWORK_NAME}
