@@ -37,7 +37,8 @@ importe o dashboard 1860 (Node Exporter Full) em Dashboards → New → Import.
 
 Os alertas também são provisionados, de `server/prometheus/grafana/provisioning/alerting/`, e
 avisam num canal do Discord pelo webhook de `DISCORD_WEBHOOK_URL`: CPU presa em 800 MHz
-(PROCHOT), CPU acima de 90 °C, disco acima de 90%, serviço do systemd em `failed`, container
+(PROCHOT), CPU acima de 90 °C, disco acima de 90%, HD de mídia (`/mnt/midia`) desmontado ou só
+leitura, serviço do systemd em `failed`, container
 reiniciando em loop e exporter fora do ar. Regras provisionadas não podem ser editadas pela
 interface: mude o `rules.yml` e reinicie o Grafana. Nos templates do arquivo, escreva `$$labels`
 e `$$values`, porque o Grafana expande `$VAR` do ambiente nesses arquivos.

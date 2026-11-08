@@ -99,6 +99,40 @@ groups:
         annotations:
           summary: "{{ $$labels.mountpoint }} está {{ printf \"%.0f\" $$values.A.Value }}% cheio."
 
+      - uid: hd-midia
+        title: HD de mídia desmontado
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              # /mnt/midia é o DATA_HOST_PATH. Desmontado, vira uma pasta vazia no SSD: os *arr
+              # baixariam para o SSD e o Jellyfin perderia a biblioteca. O "and on() up" evita
+              # disparar junto com "Coleta parada" quando o node-exporter é que caiu.
+              # Também pega o HD remontado só leitura pelo kernel depois de erros de disco.
+              expr: >
+                (absent(node_filesystem_size_bytes{mountpoint="/mnt/midia"}) and on() (up{job="node"} == 1))
+                or (node_filesystem_readonly{mountpoint="/mnt/midia"} == 1)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        for: 2m
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: critical
+        annotations:
+          summary: "/mnt/midia não está montado, ou está só leitura."
+          description: "Confira com findmnt /mnt/midia e dmesg | grep -i sdd. Se o HD caiu, pare os *arr e o qBittorrent antes de remontar, para não gravarem no SSD."
+
       - uid: servico-falhou
         title: Serviço do systemd falhou
         condition: C
