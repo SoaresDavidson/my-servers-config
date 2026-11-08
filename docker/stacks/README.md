@@ -1,12 +1,20 @@
 # Stacks
 
-Uma stack por serviço (exceto `shared` e `backup`, ver abaixo). Cada diretório tem:
+Uma stack por serviço (exceto `shared` e `backup`, ver abaixo). Em geral, cada diretório tem:
 
 - `docker-compose.yml` — sidecar Tailscale + aplicação (`network_mode: service:tailscale-<svc>`), mais o bloco `x-casaos` que define ícone, título e WebUI no dashboard do CasaOS.
 - `ts-serve.json` — configuração do `tailscale serve`, apontando para a porta da aplicação em `127.0.0.1`.
 - `.env` — symlink para `../../.env`, gerado por `scripts/setup-env.sh`.
 
 O estado de autenticação do Tailscale fica em `${CONFIG_HOST_PATH}/tailscale/<serviço>`, como bind mount. Volume nomeado não é usado porque o formulário do CasaOS não sabe importá-lo.
+
+A stack `prometheus` não usa sidecar Tailscale: publica a porta 9091 somente no
+`HOST_LAN_IP` (obrigatório), pois a 9090 já é usada pelo Calibre. Seu `x-casaos.main`
+aponta diretamente para `prometheus`. A configuração fica em `prometheus/prometheus.yml`,
+inicialmente coletando apenas as métricas do próprio Prometheus; os dados persistem em
+`${CONFIG_HOST_PATH}/prometheus`, com retenção de 15 dias. Antes da primeira subida,
+crie esse diretório com permissão de escrita para `PUID:PGID`. Não há autenticação nem
+TLS nesta publicação: use somente na LAN confiável, sem encaminhar a porta no roteador.
 
 Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `scripts/setup-env.sh`.
 
@@ -77,6 +85,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | onlyoffice (editor de documentos do Nextcloud) | — (tailnet e rede Docker) | 80 |
 | homepage (dashboard dos apps) | 3000 | 3000 |
 | dozzle (logs dos containers) | 8888 | 8080 |
+| prometheus (métricas, sem Tailscale) | 9091 (HTTP, só no `HOST_LAN_IP`) | 9090 |
 | adguard (DNS com bloqueio de anúncios) | 3080 (web), 53 tcp/udp no `HOST_LAN_IP` (DNS) | 80, 53 |
 | shared (flaresolverr, decluttarr, autoheal) | — | — |
 | clamav (antivírus dos downloads) | — | — |
