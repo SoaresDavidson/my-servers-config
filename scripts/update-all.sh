@@ -3,7 +3,7 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 DOCKER_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../docker" && pwd)
-STACKS_DIR="$DOCKER_DIR/stacks"
+STACKS_DIR="$DOCKER_DIR"
 ENV_FILE="$DOCKER_DIR/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
@@ -13,7 +13,7 @@ fi
 
 failed_stacks=""
 
-for stack in "$STACKS_DIR"/*/; do
+for stack in "$STACKS_DIR"/*/*/; do
   name=$(basename "$stack")
   # Hermes agora roda no host; imagens com build local não vêm do registry.
   [ "$name" = hermes ] && continue

@@ -3,7 +3,7 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 DOCKER_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../docker" && pwd)
-STACKS_DIR="$DOCKER_DIR/stacks"
+STACKS_DIR="$DOCKER_DIR"
 ENV_FILE="$DOCKER_DIR/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
@@ -12,10 +12,10 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 # Derruba as aplicações antes dos serviços auxiliares da stack shared.
-for stack in "$STACKS_DIR"/*/; do
+for stack in "$STACKS_DIR"/*/*/; do
   name=$(basename "$stack")
   [ "$name" = shared ] && continue
   docker compose --env-file "$ENV_FILE" -f "$stack/docker-compose.yml" down
 done
 
-docker compose --env-file "$ENV_FILE" -f "$STACKS_DIR/shared/docker-compose.yml" down
+docker compose --env-file "$ENV_FILE" -f "$STACKS_DIR/server/shared/docker-compose.yml" down

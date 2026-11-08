@@ -1,6 +1,6 @@
 # Preenche #ko_md5 (plugin KOReader Sync) com o hash "Filename" do CrossPoint: md5 do nome com que
 # o driver CrossPoint Reader envia o EPUB. Só toca livros com a coluna vazia. Rodar com a GUI parada
-# (ver stacks/README.md, secao Calibre).
+# (ver docker/README.md, secao Calibre).
 import hashlib
 from calibre.library import db
 from calibre.customize.ui import device_plugins

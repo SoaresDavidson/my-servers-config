@@ -4,15 +4,15 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 DOCKER_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../docker" && pwd)
 ENV_FILE="$DOCKER_DIR/.env"
-STACKS_DIR="$DOCKER_DIR/stacks"
+STACKS_DIR="$DOCKER_DIR"
 
 if [ -e "$ENV_FILE" ]; then
   printf '%s\n' ".env já existe em $ENV_FILE. Edite manualmente ou remova antes de executar script."
   exit 1
 fi
 
-if [ ! -d "$STACKS_DIR" ]; then
-  printf '%s\n' "diretório stacks/ não encontrado em $DOCKER_DIR."
+if [ ! -f "$STACKS_DIR/server/shared/docker-compose.yml" ]; then
+  printf '%s\n' "stacks não encontradas em $DOCKER_DIR (esperado server/shared/docker-compose.yml)."
   exit 1
 fi
 
@@ -104,7 +104,7 @@ BACKUP_PASSPHRASE=$backup_passphrase
 EOF
 chmod 600 "$ENV_FILE"
 
-for stack in "$STACKS_DIR"/*/; do
+for stack in "$STACKS_DIR"/*/*/; do
   ln -sfn ../../.env "$stack/.env"
 done
 
@@ -115,7 +115,7 @@ elif [ "$(docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' 
   printf '%s\n' "aviso: a rede $network_name existe com gateway diferente de $network_gateway. Recrie-a ou ajuste NETWORK_GATEWAY." >&2
 fi
 
-for stack in "$STACKS_DIR"/*/; do
+for stack in "$STACKS_DIR"/*/*/; do
   name=$(basename "$stack")
   if ! docker compose --env-file "$ENV_FILE" -f "$stack/docker-compose.yml" config >/dev/null; then
     printf '%s\n' ".env criado, mas docker compose config falhou na stack $name. Corrija $ENV_FILE e valide manualmente." >&2

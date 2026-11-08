@@ -43,7 +43,7 @@ Se o Hermes atualizar node/npm em `tools/` e o status acusar unit desatualizada,
 `sudo HERMES_HOME=$HERMES_HOME hermes gateway install --system --run-as-user davi --force` e copie
 `/etc/systemd/system/hermes-gateway-471fd707.service` de volta para cá.
 
-O `scripts/up-all.sh` ignora a stack `docker/stacks/hermes`; não a suba manualmente. Mantenha apenas
+O `scripts/up-all.sh` ignora a stack `docker/apps/hermes`; não a suba manualmente. Mantenha apenas
 um gateway ativo: se o serviço de usuário antigo estiver habilitado, desative-o com
 `systemctl --user disable --now hermes-gateway.service` e confira o serviço de sistema com
 `hermes gateway status --system`. Dois gateways no mesmo bot do Discord disputam as mensagens.
@@ -111,6 +111,6 @@ use `rsync -aH` (um `cp`/`mv` comum desfaz os hardlinks e duplica o espaço).
 | Hora | O quê | Origem |
 |---|---|---|
 | 02:50 | `apt-get update` + lista de pacotes atualizáveis | `cron.d/apt-update` |
-| 03:00 | Backup (offen) | `docker/stacks/backup` |
+| 03:00 | Backup (offen) | `docker/server/backup` |
 | 04:00–04:10 | unattended-upgrades instala atualizações do Debian | `systemd/apt-daily-upgrade.timer.d/override.conf` |
 | 04:30 | Reboot, só se alguma atualização exigir | `apt.conf.d/52unattended-upgrades-local` |

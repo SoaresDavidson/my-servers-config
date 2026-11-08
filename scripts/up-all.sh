@@ -4,7 +4,7 @@ set -u
 # --- Configurações ---
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 DOCKER_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../docker" && pwd)
-STACKS_DIR="$DOCKER_DIR/stacks"
+STACKS_DIR="$DOCKER_DIR"
 ENV_FILE="$DOCKER_DIR/.env"
 STATE_DIR="$DOCKER_DIR/.state"
 mkdir -p "$STATE_DIR"
@@ -86,13 +86,13 @@ has_image_changes() {
 
 # 1. Stack Shared (Sempre primeiro e aguarda health)
 log_info "Iniciando stack shared..."
-docker compose --env-file "$ENV_FILE" -f "$STACKS_DIR/shared/docker-compose.yml" up -d
+docker compose --env-file "$ENV_FILE" -f "$STACKS_DIR/server/shared/docker-compose.yml" up -d
 
 # Aguarda a stack shared ficar saudável
 # O primeiro healthcheck só roda após o interval (30s), então 60s era apertado
 timeout=120
 elapsed=0
-while ! is_stack_healthy "$STACKS_DIR/shared/docker-compose.yml"; do
+while ! is_stack_healthy "$STACKS_DIR/server/shared/docker-compose.yml"; do
   if [ $elapsed -ge $timeout ]; then
     log_err "Timeout aguardando stack shared ficar saudável."
     exit 1
@@ -105,7 +105,7 @@ log_info "Stack shared está saudável."
 # 2. Demais Stacks
 failed_stacks=""
 
-for stack_dir in "$STACKS_DIR"/*/; do
+for stack_dir in "$STACKS_DIR"/*/*/; do
   name=$(basename "$stack_dir")
   [ "$name" = shared ] && continue
   # Hermes foi migrado para o systemd no host; não iniciar o gateway antigo no Docker.

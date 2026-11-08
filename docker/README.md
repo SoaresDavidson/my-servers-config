@@ -1,6 +1,16 @@
-# Stacks
+# Stacks Docker
 
-Uma stack por serviço (exceto `shared` e `backup`, ver abaixo). Em geral, cada diretório tem:
+Uma stack por serviço (exceto `shared` e `backup`, ver abaixo), agrupadas por assunto:
+
+| Grupo | Stacks |
+| --- | --- |
+| `media/` | jellyfin, jellyseerr, sonarr, radarr, lidarr, prowlarr, bazarr, profilarr, qbittorrent, questarr |
+| `books/` | calibre, bookshelf, shelfarr, lazylibrarian, kosync |
+| `server/` | shared, adguard, backup, prometheus, dozzle, homepage, clamav |
+| `apps/` | nextcloud, onlyoffice, hermes |
+
+O nome da pasta da stack (não o do grupo) continua sendo o nome do projeto no Compose, então mover uma
+stack de grupo não muda os nomes dos containers. Os grupos ficam direto em `docker/` e os scripts percorrem `docker/*/*/`. Em geral, cada diretório tem:
 
 - `docker-compose.yml` — sidecar Tailscale + aplicação (`network_mode: service:tailscale-<svc>`), mais o bloco `x-casaos` que define ícone, título e WebUI no dashboard do CasaOS.
 - `ts-serve.json` — configuração do `tailscale serve`, apontando para a porta da aplicação em `127.0.0.1`.
@@ -10,7 +20,7 @@ O estado de autenticação do Tailscale fica em `${CONFIG_HOST_PATH}/tailscale/<
 
 A stack `prometheus` não usa sidecar Tailscale: publica a porta 9091 somente no
 `HOST_LAN_IP` (obrigatório), pois a 9090 já é usada pelo Calibre. Seu `x-casaos.main`
-aponta diretamente para `prometheus`. A configuração fica em `prometheus/prometheus.yml`,
+aponta diretamente para `prometheus`. A configuração fica em `server/prometheus/prometheus.yml`,
 inicialmente coletando apenas as métricas do próprio Prometheus; os dados persistem em
 `${CONFIG_HOST_PATH}/prometheus`, com retenção de 15 dias. Antes da primeira subida,
 crie esse diretório com permissão de escrita para `PUID:PGID`. Não há autenticação nem
@@ -30,7 +40,7 @@ Se a sidecar reinicia depois do app (boot lento, por exemplo), o app fica preso 
 ./scripts/down-all.sh       # derruba todas as stacks
 
 # Para operar apenas uma stack:
-cd stacks/sonarr
+cd media/sonarr
 docker compose up -d
 ```
 
@@ -117,7 +127,7 @@ envia via WebDAV para o container `rclone`, que grava no Drive com OAuth da pró
 3. Suba a stack e dispare um backup manual para testar:
 
    ```sh
-   docker compose -f stacks/backup/docker-compose.yml up -d
+   docker compose -f server/backup/docker-compose.yml up -d
    docker exec backup backup
    ```
 
@@ -142,7 +152,7 @@ Para cadastrar uma conta pelo KOReader, altere temporariamente `ENABLE_USER_REGI
 para `ENABLE_USER_REGISTRATION=true` no `docker-compose.yml` desta stack e recrie a aplicação:
 
 ```sh
-cd ~/my-servers-config/docker/stacks/kosync
+cd ~/my-servers-config/docker/books/kosync
 docker compose up -d --force-recreate kosync
 ```
 
@@ -179,7 +189,7 @@ O `#ko_md5` é o `document` que o dispositivo manda ao kosync, e cada um calcula
   ```sh
   docker stop calibre
   docker run --rm --user 1000:1000 -e HOME=/config -v ${CONFIG_HOST_PATH}/calibre/config:/config \
-    -v "$PWD/stacks/calibre":/work:ro --entrypoint calibre-debug lscr.io/linuxserver/calibre:latest /work/fill-ko-md5.py
+    -v "$PWD/books/calibre":/work:ro --entrypoint calibre-debug lscr.io/linuxserver/calibre:latest /work/fill-ko-md5.py
   docker start calibre
   ```
   (Com a GUI parada: ela mantém um cache e não veria a mudança.)
