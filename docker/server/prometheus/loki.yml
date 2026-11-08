@@ -1,0 +1,46 @@
+# Loki em modo monolítico, num só processo, guardando tudo no disco local.
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  log_level: warn
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2026-11-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  # Mesma retenção do Prometheus.
+  retention_period: 15d
+  # Para o Logs Drilldown do Grafana mostrar o volume por serviço.
+  volume_enabled: true
+  # Na primeira subida o Alloy envia todo o log que o Docker guardou de cada container.
+  ingestion_rate_mb: 8
+  ingestion_burst_size_mb: 16
+
+compactor:
+  working_directory: /loki/compactor
+  # Sem isso o retention_period não apaga nada.
+  retention_enabled: true
+  delete_request_store: filesystem
+
+analytics:
+  reporting_enabled: false

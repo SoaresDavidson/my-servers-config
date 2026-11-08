@@ -1,0 +1,12 @@
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    # Mesma rede Docker; o Loki não tem porta publicada.
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      maxLines: 1000

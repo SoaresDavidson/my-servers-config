@@ -48,6 +48,16 @@ sem porta publicada. Ele varre os containers a cada 30s e não mede o espaço em
 um (o `du` por camada é caro), para poupar a CPU. Precisa dos sockets do Docker e do containerd:
 sem o do containerd, as versões novas não enxergam nenhum container.
 
+Os logs dos containers vão para o `loki`, também nessa stack e sem porta publicada. Quem coleta é o
+`alloy`, que lê o log de cada container pelo socket do Docker (`server/prometheus/config.alloy`) e o envia
+ao Loki com os rótulos `container`, `service_name`, `compose_project` e `stream`. O Loki guarda 15 dias em
+`${CONFIG_HOST_PATH}/loki` (configuração em `server/prometheus/loki.yml`), e o Alloy guarda até onde já leu
+em `${CONFIG_HOST_PATH}/alloy`. Os dois diretórios precisam existir antes da primeira subida, o do Loki com
+permissão de escrita para `PUID:PGID`. O datasource `Loki` vem provisionado no Grafana: consulte em
+Explore ou em Drilldown → Logs, por exemplo `{container="jellyfin"} |= "error"`. O Dozzle continua
+sendo o caminho rápido para acompanhar um log ao vivo. A imagem do Loki é distroless (sem shell nem wget),
+então ele não tem healthcheck. O Alloy não tem wget nem curl, e o healthcheck dele usa o `bash`.
+
 Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `scripts/setup-env.sh`.
 
 Se a sidecar reinicia depois do app (boot lento, por exemplo), o app fica preso num network namespace órfão, só com `lo`, e para de responder pela LAN e pelo tailnet. Por isso o healthcheck de cada app começa com `test -e /sys/class/net/eth0`, e o label `autoheal=true` deixa o `autoheal` (stack `shared`) reiniciar o app, que volta já no namespace atual da sidecar. A imagem do dozzle é `scratch` (sem shell), então o healthcheck dela é só `/dozzle healthcheck` e não detecta o namespace órfão; se o dozzle sumir da rede depois de um reinício da sidecar, reinicie-o à mão. (Montar o busybox via volume `type: image` resolveria; não foi feito porque o CasaOS, já removido, não validava esse compose.)
@@ -110,6 +120,8 @@ o script retorna erro ao final para registrar a falha.
 | node-exporter (métricas do host, rede do host) | 9100 (HTTP, só no `HOST_LAN_IP`) | 9100 |
 | grafana (gráficos do Prometheus, mesma stack) | 3001 (HTTP, só no `HOST_LAN_IP`) | 3000 |
 | cadvisor (métricas por container, mesma stack) | — (só rede Docker) | 8080 |
+| loki (logs dos containers, mesma stack) | — (só rede Docker) | 3100 |
+| alloy (coletor de logs para o Loki, mesma stack) | — | 12345 (só no container) |
 | adguard (DNS com bloqueio de anúncios) | 3080 (web), 53 tcp/udp no `HOST_LAN_IP` (DNS) | 80, 53 |
 | shared (flaresolverr, decluttarr, autoheal) | — | — |
 | clamav (antivírus dos downloads) | — | — |
