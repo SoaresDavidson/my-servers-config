@@ -46,7 +46,7 @@ services:
       - WEBDAV_URL=http://rclone:8080/
       - WEBDAV_PATH=/
       - WEBDAV_USERNAME=backup
-      - WEBDAV_PASSWORD=${BACKUP_PASSPHRASE}
+      - WEBDAV_PASSWORD=${BACKUP_PASSPHRASE:?defina BACKUP_PASSPHRASE no .env}
     volumes:
       # Para os containers com o label docker-volume-backup.stop-during-backup=true durante o backup.
       - /var/run/docker.sock:/var/run/docker.sock:ro
