@@ -46,6 +46,9 @@ services:
       - FALAAI_PALAVRAS_POR_MINUTO=150
       - FALAAI_PAUSA_MS=300
       - FALAAI_TEXTO_MAX_CHARS=30000
+      # Sem ?dia=, o Job só pega Newsletters dos últimos N dias (0 = todas as pendentes).
+      - FALAAI_GMAIL_JANELA_DIAS=2
+      - FALAAI_FUSO=America/Sao_Paulo
     volumes:
       # Banco, episódios e gmail-token.json (dono 1000:1000).
       - ${CONFIG_HOST_PATH}/falaai:/data
