@@ -112,6 +112,8 @@ services:
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
       - GF_NEWS_NEWS_FEED_ENABLED=false
+      # Lido pelo provisioning/alerting/contact-points.yml.
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:?Defina DISCORD_WEBHOOK_URL}
     volumes:
       # Datasource do Prometheus versionado; dashboards e usuários ficam no banco em /var/lib/grafana.
       - ./grafana/provisioning:/etc/grafana/provisioning:ro

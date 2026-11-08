@@ -1,0 +1,187 @@
+# Regras de alerta do servidor. Cada consulta já traz a condição no PromQL e só devolve séries
+# quando há problema; o threshold "> 0" só transforma "veio resultado" em alerta. Por isso a falta de
+# dados conta como OK (noDataState: OK), e o alerta "Coleta parada" cobre um exporter fora do ar.
+#
+# Em arquivos de provisionamento o Grafana expande ${VAR} e $VAR do ambiente: nos templates,
+# $labels e $values precisam ser escritos como $$labels e $$values.
+
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: servidor
+    folder: Servidor
+    interval: 1m
+    rules:
+      - uid: cpu-presa
+        title: CPU presa em 800 MHz
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              # Núcleos ociosos descem a 800 MHz normalmente (schedutil), mas o mais rápido não.
+              # Com o PROCHOT, todos ficam presos: o máximo entre os núcleos não passa de 1 GHz.
+              expr: max_over_time(max(node_cpu_scaling_frequency_hertz)[10m:]) / 1e6 < 1000
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: critical
+        annotations:
+          summary: "Nenhum núcleo passou de {{ printf \"%.0f\" $$values.A.Value }} MHz em 10 minutos."
+          description: "O PROCHOT externo voltou a limitar a CPU. Confira se o mac-prochot-off rodou (systemctl status mac-prochot-off) e o MSR 0x1FC."
+
+      - uid: cpu-quente
+        title: CPU acima de 90 °C
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: max(node_hwmon_temp_celsius{chip=~".*coretemp.*"}) > 90
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        # Picos curtos na subida das stacks são esperados; só avisa se continuar quente.
+        for: 3m
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: critical
+        annotations:
+          summary: "CPU a {{ printf \"%.0f\" $$values.A.Value }} °C há mais de 3 minutos."
+          description: "Confira as ventoinhas (mbpfan) e qual container está usando CPU no dashboard do cAdvisor."
+
+      - uid: disco-cheio
+        title: Disco quase cheio
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: 100 * (1 - node_filesystem_avail_bytes{fstype="ext4"} / node_filesystem_size_bytes{fstype="ext4"}) > 90
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $$labels.mountpoint }} está {{ printf \"%.0f\" $$values.A.Value }}% cheio."
+
+      - uid: servico-falhou
+        title: Serviço do systemd falhou
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              # Só as unidades listadas no --collector.systemd.unit-include do node-exporter.
+              expr: node_systemd_unit_state{state="failed"} == 1
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        for: 1m
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $$labels.name }} está em estado failed."
+          description: "Veja o motivo com journalctl -u {{ $$labels.name }} -b."
+
+      - uid: container-reiniciando
+        title: Container reiniciando
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1800, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              # Cada início muda o container_start_time_seconds; mais de 3 em 30 min é um loop.
+              expr: changes(container_start_time_seconds{name!=""}[30m]) > 3
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $$labels.name }} reiniciou {{ printf \"%.0f\" $$values.A.Value }} vezes em 30 minutos."
+          description: "Pode ser o autoheal reiniciando por healthcheck. Veja os logs no Dozzle."
+
+      - uid: coleta-parada
+        title: Coleta parada
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: up == 0
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              # up == 0 devolve o valor 0, então aqui o teste é "existe resultado" (>= 0).
+              conditions:
+                - evaluator: { type: gt, params: [-1] }
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: warning
+        annotations:
+          summary: "O Prometheus não consegue coletar o job {{ $$labels.job }}."
+          description: "Sem essa coleta, os outros alertas desse exporter ficam cegos."

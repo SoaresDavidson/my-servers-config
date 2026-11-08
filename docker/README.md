@@ -35,6 +35,13 @@ dashboards e usuários ficam em `${CONFIG_HOST_PATH}/grafana`, que também preci
 permissão de escrita para `PUID:PGID` antes da primeira subida. Para os gráficos do host,
 importe o dashboard 1860 (Node Exporter Full) em Dashboards → New → Import.
 
+Os alertas também são provisionados, de `server/prometheus/grafana/provisioning/alerting/`, e
+avisam num canal do Discord pelo webhook de `DISCORD_WEBHOOK_URL`: CPU presa em 800 MHz
+(PROCHOT), CPU acima de 90 °C, disco acima de 90%, serviço do systemd em `failed`, container
+reiniciando em loop e exporter fora do ar. Regras provisionadas não podem ser editadas pela
+interface: mude o `rules.yml` e reinicie o Grafana. Nos templates do arquivo, escreva `$$labels`
+e `$$values`, porque o Grafana expande `$VAR` do ambiente nesses arquivos.
+
 As métricas por container (CPU, memória, rede e I/O) vêm do `cadvisor`, também nessa stack,
 sem porta publicada. Ele varre os containers a cada 30s e não mede o espaço em disco de cada
 um (o `du` por camada é caro), para poupar a CPU. Precisa dos sockets do Docker e do containerd:
