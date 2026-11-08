@@ -35,6 +35,11 @@ dashboards e usuários ficam em `${CONFIG_HOST_PATH}/grafana`, que também preci
 permissão de escrita para `PUID:PGID` antes da primeira subida. Para os gráficos do host,
 importe o dashboard 1860 (Node Exporter Full) em Dashboards → New → Import.
 
+As métricas por container (CPU, memória, rede e I/O) vêm do `cadvisor`, também nessa stack,
+sem porta publicada. Ele varre os containers a cada 30s e não mede o espaço em disco de cada
+um (o `du` por camada é caro), para poupar a CPU. Precisa dos sockets do Docker e do containerd:
+sem o do containerd, as versões novas não enxergam nenhum container.
+
 Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `scripts/setup-env.sh`.
 
 Se a sidecar reinicia depois do app (boot lento, por exemplo), o app fica preso num network namespace órfão, só com `lo`, e para de responder pela LAN e pelo tailnet. Por isso o healthcheck de cada app começa com `test -e /sys/class/net/eth0`, e o label `autoheal=true` deixa o `autoheal` (stack `shared`) reiniciar o app, que volta já no namespace atual da sidecar. A imagem do dozzle é `scratch` (sem shell), então o healthcheck dela é só `/dozzle healthcheck` e não detecta o namespace órfão; se o dozzle sumir da rede depois de um reinício da sidecar, reinicie-o à mão. (Montar o busybox via volume `type: image` resolveria; não foi feito porque o CasaOS, já removido, não validava esse compose.)
@@ -96,6 +101,7 @@ o script retorna erro ao final para registrar a falha.
 | prometheus (métricas, sem Tailscale) | 9091 (HTTP, só no `HOST_LAN_IP`) | 9090 |
 | node-exporter (métricas do host, rede do host) | 9100 (HTTP, só no `HOST_LAN_IP`) | 9100 |
 | grafana (gráficos do Prometheus, mesma stack) | 3001 (HTTP, só no `HOST_LAN_IP`) | 3000 |
+| cadvisor (métricas por container, mesma stack) | — (só rede Docker) | 8080 |
 | adguard (DNS com bloqueio de anúncios) | 3080 (web), 53 tcp/udp no `HOST_LAN_IP` (DNS) | 80, 53 |
 | shared (flaresolverr, decluttarr, autoheal) | — | — |
 | clamav (antivírus dos downloads) | — | — |

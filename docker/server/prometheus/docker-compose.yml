@@ -55,6 +55,43 @@ services:
       retries: 3
       start_period: 10s
 
+  # Métricas por container (CPU, memória, rede, I/O). Sem porta publicada: o Prometheus
+  # lê pela rede Docker. Ajustado para gastar pouca CPU, que é o recurso escasso do MacBook.
+  cadvisor:
+    image: ghcr.io/google/cadvisor:latest
+    container_name: cadvisor
+    labels:
+      - autoheal=true
+    command:
+      - --housekeeping_interval=30s
+      - --docker_only=true
+      # Sem rótulos do compose nas métricas: o nome do container (label "name") basta,
+      # e cada rótulo a mais multiplica as séries guardadas.
+      - --store_container_labels=false
+      # "disk" mede o espaço de cada camada com du, o mais caro de todos. I/O (diskIO) continua.
+      - --disable_metrics=advtcp,cpu_topology,cpuset,disk,hugetlb,memory_numa,percpu,process,referenced_memory,resctrl,sched,tcp,udp
+    volumes:
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+      # Nomes e cgroups dos containers. As versões novas leem pelos dois sockets; sem o do
+      # containerd, a fábrica docker não registra e nada é coletado. Os sockets dão acesso
+      # total ao Docker, mesmo montados :ro.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/containerd/containerd.sock:/run/containerd/containerd.sock:ro
+    devices:
+      - /dev/kmsg
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - media-network
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
