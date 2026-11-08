@@ -162,6 +162,9 @@ services:
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
       - GF_NEWS_NEWS_FEED_ENABLED=false
+      # SQLite em modo WAL: leituras não esperam escritas. Sem isso, com o disco ocupado, a avaliação
+      # dos alertas falhava com "database is locked" e disparava DatasourceError no Discord.
+      - GF_DATABASE_WAL=true
       # Lido pelo provisioning/alerting/contact-points.yml.
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:?Defina DISCORD_WEBHOOK_URL}
       # PNG de painéis via serviço externo; o callback é como o renderer volta ao Grafana pela rede interna.

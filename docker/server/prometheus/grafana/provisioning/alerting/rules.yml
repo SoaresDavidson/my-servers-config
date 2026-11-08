@@ -2,8 +2,8 @@
 # quando há problema; o threshold "> 0" só transforma "veio resultado" em alerta. Por isso a falta de
 # dados conta como OK (noDataState: OK), e o alerta "Coleta parada" cobre um exporter fora do ar.
 #
-# Em arquivos de provisionamento o Grafana expande ${VAR} e $VAR do ambiente: nos templates,
-# $labels e $values precisam ser escritos como $$labels e $$values.
+# Em arquivos de provisionamento o Grafana expande ${VAR} e $VAR do ambiente, e o escape $$ chega
+# literal ao template. Por isso os templates usam .Labels e .Values, que não têm $.
 
 apiVersion: 1
 
@@ -40,7 +40,7 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Nenhum núcleo passou de {{ printf \"%.0f\" $$values.A.Value }} MHz em 10 minutos."
+          summary: "Nenhum núcleo passou de {{ printf \"%.0f\" .Values.A.Value }} MHz em 10 minutos."
           description: "O PROCHOT externo voltou a limitar a CPU. Confira se o mac-prochot-off rodou (systemctl status mac-prochot-off) e o MSR 0x1FC."
 
       - uid: cpu-quente
@@ -69,7 +69,7 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "CPU a {{ printf \"%.0f\" $$values.A.Value }} °C há mais de 3 minutos."
+          summary: "CPU a {{ printf \"%.0f\" .Values.A.Value }} °C há mais de 3 minutos."
           description: "Confira as ventoinhas (mbpfan) e qual container está usando CPU no dashboard do cAdvisor."
 
       - uid: disco-cheio
@@ -97,7 +97,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "{{ $$labels.mountpoint }} está {{ printf \"%.0f\" $$values.A.Value }}% cheio."
+          summary: "{{ .Labels.mountpoint }} está {{ printf \"%.0f\" .Values.A.Value }}% cheio."
 
       - uid: hd-midia
         title: HD de mídia desmontado
@@ -159,8 +159,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "{{ $$labels.name }} está em estado failed."
-          description: "Veja o motivo com journalctl -u {{ $$labels.name }} -b."
+          summary: "{{ .Labels.name }} está em estado failed."
+          description: "Veja o motivo com journalctl -u {{ .Labels.name }} -b."
 
       - uid: container-reiniciando
         title: Container reiniciando
@@ -188,7 +188,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "{{ $$labels.name }} reiniciou {{ printf \"%.0f\" $$values.A.Value }} vezes em 30 minutos."
+          summary: "{{ .Labels.name }} reiniciou {{ printf \"%.0f\" .Values.A.Value }} vezes em 30 minutos."
           description: "Pode ser o autoheal reiniciando por healthcheck. Veja os logs no Dozzle."
 
       - uid: coleta-parada
@@ -217,5 +217,5 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "O Prometheus não consegue coletar o job {{ $$labels.job }}."
+          summary: "O Prometheus não consegue coletar o job {{ .Labels.job }}."
           description: "Sem essa coleta, os outros alertas desse exporter ficam cegos."

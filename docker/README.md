@@ -40,8 +40,10 @@ avisam num canal do Discord pelo webhook de `DISCORD_WEBHOOK_URL`: CPU presa em 
 (PROCHOT), CPU acima de 90 °C, disco acima de 90%, HD de mídia (`/mnt/midia`) desmontado ou só
 leitura, serviço do systemd em `failed`, container
 reiniciando em loop e exporter fora do ar. Regras provisionadas não podem ser editadas pela
-interface: mude o `rules.yml` e reinicie o Grafana. Nos templates do arquivo, escreva `$$labels`
-e `$$values`, porque o Grafana expande `$VAR` do ambiente nesses arquivos.
+interface: mude o `rules.yml` e reinicie o Grafana. Nos templates do arquivo, escreva `.Labels` e
+`.Values` em vez de `$labels` e `$values`: o Grafana expande `$VAR` do ambiente nesses arquivos, e o
+escape `$$` chega literal na mensagem. O banco SQLite roda em modo WAL (`GF_DATABASE_WAL`), para
+que a avaliação dos alertas não falhe com "database is locked" quando o disco está ocupado.
 
 As métricas por container (CPU, memória, rede e I/O) vêm do `cadvisor`, também nessa stack,
 sem porta publicada. Ele varre os containers a cada 30s e não mede o espaço em disco de cada
