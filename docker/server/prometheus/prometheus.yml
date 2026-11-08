@@ -13,3 +13,11 @@ scrape_configs:
       - targets: ["host-lan:9100"]
         labels:
           instance: macbook
+
+  - job_name: cadvisor
+    # Igual ao --housekeeping_interval do cAdvisor: coletar mais rápido só repetiria valores.
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels:
+          instance: macbook
