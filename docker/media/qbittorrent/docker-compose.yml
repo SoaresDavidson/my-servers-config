@@ -52,19 +52,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-x-casaos:
-  main: qbittorrent
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: hotio
-  category: Downloader
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/qbittorrent.png
-  title:
-    custom: qBittorrent
-  tagline:
-    custom: qBittorrent atras da Surfshark
-  description:
-    custom: qBittorrent com WireGuard da Surfshark. WebUI publicada na porta 8080 do host.

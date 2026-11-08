@@ -56,23 +56,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-bookshelf
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: pennydreadful
-  category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/readarr.png
-  scheme: http
-  port_map: "8787"
-  index: /
-  title:
-    custom: Bookshelf
-  tagline:
-    custom: Bookshelf atras de Tailscale
-  description:
-    custom: Bookshelf exposto pela sidecar Tailscale, na rede Docker compartilhada.

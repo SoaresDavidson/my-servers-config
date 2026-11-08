@@ -56,23 +56,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-dozzle
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: amir20
-  category: Utilities
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/dozzle.png
-  scheme: http
-  port_map: "8888"
-  index: /
-  title:
-    custom: Dozzle
-  tagline:
-    custom: Logs dos containers atras de Tailscale
-  description:
-    custom: Dozzle exposto pela sidecar Tailscale, com acesso somente leitura ao Docker.

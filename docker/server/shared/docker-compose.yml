@@ -84,22 +84,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-x-casaos:
-  main: flaresolverr
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: flaresolverr
-  category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/flaresolverr.png
-  scheme: http
-  port_map: "8191"
-  index: /
-  title:
-    custom: Media Helpers
-  tagline:
-    custom: FlareSolverr e Decluttarr
-  description:
-    custom: Servicos auxiliares do stack arr, sem Tailscale, apenas na rede interna.

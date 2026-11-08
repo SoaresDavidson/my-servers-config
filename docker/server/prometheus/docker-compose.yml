@@ -30,22 +30,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-x-casaos:
-  main: prometheus
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: prometheus
-  category: Utilities
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/prometheus.png
-  scheme: http
-  port_map: "9091"
-  index: /
-  title:
-    custom: Prometheus
-  tagline:
-    custom: Métricas sem sidecar Tailscale
-  description:
-    custom: Prometheus com dados persistentes, retenção de 15 dias e WebUI somente na LAN pela porta 9091.

@@ -60,23 +60,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-jellyfin
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: linuxserver.io
-  category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/jellyfin.png
-  scheme: http
-  port_map: "8096"
-  index: /
-  title:
-    custom: Jellyfin
-  tagline:
-    custom: Jellyfin atras de Tailscale
-  description:
-    custom: Jellyfin exposto pela sidecar Tailscale, na rede Docker compartilhada.

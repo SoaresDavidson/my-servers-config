@@ -39,19 +39,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-x-casaos:
-  main: clamav
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: cisco-talos
-  category: Utilities
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/clamav.png
-  title:
-    custom: ClamAV
-  tagline:
-    custom: Antivírus dos downloads
-  description:
-    custom: clamscan periódico e somente leitura em /data, com resultados no log do container.

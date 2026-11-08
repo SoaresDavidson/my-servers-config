@@ -56,19 +56,3 @@ services:
       # Cópia local, além da do Drive.
       - ${BACKUP_HOST_PATH:-/DATA/Backups/media-stack}:/archive
     restart: unless-stopped
-
-x-casaos:
-  main: backup
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: offen
-  category: Utilities
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/rclone.png
-  title:
-    custom: Backup
-  tagline:
-    custom: Backup das configs para o Google Drive
-  description:
-    custom: offen/docker-volume-backup diário, criptografado, com cópia local e envio ao Google Drive via rclone.

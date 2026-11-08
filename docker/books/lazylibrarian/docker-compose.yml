@@ -55,23 +55,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-lazylibrarian
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: linuxserver.io
-  category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/lazylibrarian.png
-  scheme: http
-  port_map: "5299"
-  index: /
-  title:
-    custom: LazyLibrarian
-  tagline:
-    custom: LazyLibrarian atras de Tailscale
-  description:
-    custom: LazyLibrarian exposto pela sidecar Tailscale, na rede Docker compartilhada.

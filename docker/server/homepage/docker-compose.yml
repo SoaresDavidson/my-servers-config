@@ -81,23 +81,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-homepage
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: gethomepage
-  category: Utilities
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/homepage.png
-  scheme: http
-  port_map: "3000"
-  index: /
-  title:
-    custom: Homepage
-  tagline:
-    custom: Dashboard dos apps atras de Tailscale
-  description:
-    custom: Homepage exposto pela sidecar Tailscale, com status via docker-socket-proxy.

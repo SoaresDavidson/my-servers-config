@@ -59,22 +59,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-kosync
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: koreader
-  category: Media
-  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/koreader.png
-  scheme: https
-  index: /healthcheck
-  title:
-    custom: KOSync
-  tagline:
-    custom: KOReader Sync Server atras de Tailscale
-  description:
-    custom: Servidor oficial de sincronizacao de progresso do KOReader.

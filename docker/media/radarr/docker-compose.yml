@@ -54,23 +54,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-radarr
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: linuxserver.io
-  category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/radarr.png
-  scheme: http
-  port_map: "7878"
-  index: /
-  title:
-    custom: Radarr
-  tagline:
-    custom: Radarr atras de Tailscale
-  description:
-    custom: Radarr exposto pela sidecar Tailscale, na rede Docker compartilhada.

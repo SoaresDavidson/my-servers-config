@@ -60,23 +60,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-calibre
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: linuxserver.io
-  category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/calibre.png
-  scheme: http
-  port_map: "8082"
-  index: /
-  title:
-    custom: Calibre
-  tagline:
-    custom: Calibre atras de Tailscale
-  description:
-    custom: Calibre exposto pela sidecar Tailscale, na rede Docker compartilhada.

@@ -12,15 +12,14 @@ Uma stack por serviço (exceto `shared` e `backup`, ver abaixo), agrupadas por a
 O nome da pasta da stack (não o do grupo) continua sendo o nome do projeto no Compose, então mover uma
 stack de grupo não muda os nomes dos containers. Os grupos ficam direto em `docker/` e os scripts percorrem `docker/*/*/`. Em geral, cada diretório tem:
 
-- `docker-compose.yml` — sidecar Tailscale + aplicação (`network_mode: service:tailscale-<svc>`), mais o bloco `x-casaos` que define ícone, título e WebUI no dashboard do CasaOS.
+- `docker-compose.yml` — sidecar Tailscale + aplicação (`network_mode: service:tailscale-<svc>`).
 - `ts-serve.json` — configuração do `tailscale serve`, apontando para a porta da aplicação em `127.0.0.1`.
 - `.env` — symlink para `../../.env`, gerado por `scripts/setup-env.sh`.
 
-O estado de autenticação do Tailscale fica em `${CONFIG_HOST_PATH}/tailscale/<serviço>`, como bind mount. Volume nomeado não é usado porque o formulário do CasaOS não sabe importá-lo.
+O estado de autenticação do Tailscale fica em `${CONFIG_HOST_PATH}/tailscale/<serviço>`, como bind mount, para entrar no backup junto com o resto da config.
 
 A stack `prometheus` não usa sidecar Tailscale: publica a porta 9091 somente no
-`HOST_LAN_IP` (obrigatório), pois a 9090 já é usada pelo Calibre. Seu `x-casaos.main`
-aponta diretamente para `prometheus`. A configuração fica em `server/prometheus/prometheus.yml`,
+`HOST_LAN_IP` (obrigatório), pois a 9090 já é usada pelo Calibre. A configuração fica em `server/prometheus/prometheus.yml`,
 inicialmente coletando apenas as métricas do próprio Prometheus; os dados persistem em
 `${CONFIG_HOST_PATH}/prometheus`, com retenção de 15 dias. Antes da primeira subida,
 crie esse diretório com permissão de escrita para `PUID:PGID`. Não há autenticação nem
@@ -28,7 +27,7 @@ TLS nesta publicação: use somente na LAN confiável, sem encaminhar a porta no
 
 Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `scripts/setup-env.sh`.
 
-Se a sidecar reinicia depois do app (boot lento, por exemplo), o app fica preso num network namespace órfão, só com `lo`, e para de responder pela LAN e pelo tailnet. Por isso o healthcheck de cada app começa com `test -e /sys/class/net/eth0`, e o label `autoheal=true` deixa o `autoheal` (stack `shared`) reiniciar o app, que volta já no namespace atual da sidecar. A imagem do dozzle é `scratch` (sem shell), então o healthcheck dela é só `/dozzle healthcheck` e não detecta o namespace órfão; se o dozzle sumir da rede depois de um reinício da sidecar, reinicie-o à mão. (Montar o busybox via volume `type: image` funcionaria, mas o CasaOS não consegue validar esse compose e o painel passa a mostrar "failed to load apps".)
+Se a sidecar reinicia depois do app (boot lento, por exemplo), o app fica preso num network namespace órfão, só com `lo`, e para de responder pela LAN e pelo tailnet. Por isso o healthcheck de cada app começa com `test -e /sys/class/net/eth0`, e o label `autoheal=true` deixa o `autoheal` (stack `shared`) reiniciar o app, que volta já no namespace atual da sidecar. A imagem do dozzle é `scratch` (sem shell), então o healthcheck dela é só `/dozzle healthcheck` e não detecta o namespace órfão; se o dozzle sumir da rede depois de um reinício da sidecar, reinicie-o à mão. (Montar o busybox via volume `type: image` resolveria; não foi feito porque o CasaOS, já removido, não validava esse compose.)
 
 ## Uso
 
@@ -60,16 +59,6 @@ após um pull, recria stacks com imagens novas mesmo se estiverem saudáveis e s
 no compose. O download ignora imagens de build local.
 Se o download de uma stack falhar, as demais continuam e as imagens disponíveis são aplicadas;
 o script retorna erro ao final para registrar a falha.
-
-## CasaOS
-
-No CasaOS, use *Custom Install → Import*, colando o conteúdo de `docker-compose.yml` da stack. O `x-casaos` de topo define:
-
-- `main` — o contêiner sidecar Tailscale, que é quem publica a porta no host. A aplicação em si não publica porta nenhuma.
-- `port_map` — a porta publicada no host, usada para montar o link da WebUI.
-- `icon` — ícone exibido no dashboard.
-
-O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo CasaOS, copie o `ts-serve.json` da stack para o mesmo diretório onde o CasaOS grava o compose (`/var/lib/casaos/apps/<app>/`), ou troque o bind por um caminho absoluto.
 
 ## Serviços e portas
 

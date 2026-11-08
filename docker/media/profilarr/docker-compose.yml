@@ -45,23 +45,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-profilarr
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: santiagosayshey
-  category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/profilarr.png
-  scheme: http
-  port_map: "6868"
-  index: /
-  title:
-    custom: Profilarr
-  tagline:
-    custom: Profilarr atras de Tailscale
-  description:
-    custom: Profilarr exposto pela sidecar Tailscale, na rede Docker compartilhada.

@@ -222,23 +222,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-nextcloud
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: nextcloud
-  category: Cloud
-  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/nextcloud.png
-  scheme: http
-  port_map: "7580"
-  index: /
-  title:
-    custom: Nextcloud
-  tagline:
-    custom: Nextcloud atras de Tailscale
-  description:
-    custom: Nextcloud com Postgres e Redis no namespace da sidecar Tailscale, editando documentos pelo OnlyOffice.

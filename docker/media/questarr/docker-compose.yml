@@ -45,22 +45,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-x-casaos:
-  main: tailscale-questarr
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: doezer
-  category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/questarr.png
-  scheme: http
-  port_map: "5000"
-  index: /
-  title:
-    custom: Questarr
-  tagline:
-    custom: Questarr atras de Tailscale
-  description:
-    custom: Questarr exposto pela sidecar Tailscale, na rede Docker compartilhada.

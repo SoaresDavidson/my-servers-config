@@ -53,23 +53,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-prowlarr
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: linuxserver.io
-  category: Media
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/prowlarr.png
-  scheme: http
-  port_map: "9696"
-  index: /
-  title:
-    custom: Prowlarr
-  tagline:
-    custom: Prowlarr atras de Tailscale
-  description:
-    custom: Prowlarr exposto pela sidecar Tailscale, na rede Docker compartilhada.

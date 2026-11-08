@@ -55,23 +55,3 @@ networks:
   media-network:
     name: ${NETWORK_NAME}
     external: true
-
-
-x-casaos:
-  main: tailscale-adguard
-  architectures:
-    - amd64
-    - arm64
-  author: SoaresDavidson
-  developer: AdguardTeam
-  category: Network
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/adguard-home.png
-  scheme: http
-  port_map: "3080"
-  index: /
-  title:
-    custom: AdGuard Home
-  tagline:
-    custom: DNS com bloqueio de anúncios atras de Tailscale
-  description:
-    custom: AdGuard Home exposto pela sidecar Tailscale, servindo DNS na LAN e no tailnet.
