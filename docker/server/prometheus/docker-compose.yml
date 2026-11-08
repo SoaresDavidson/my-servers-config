@@ -150,6 +150,7 @@ services:
     depends_on:
       - prometheus
       - loki
+      - grafana-renderer
     ports:
       # 3000 já é usada pelo homepage.
       - "${HOST_LAN_IP:?Defina HOST_LAN_IP}:3001:3000"
@@ -163,6 +164,11 @@ services:
       - GF_NEWS_NEWS_FEED_ENABLED=false
       # Lido pelo provisioning/alerting/contact-points.yml.
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:?Defina DISCORD_WEBHOOK_URL}
+      # PNG de painéis via serviço externo; o callback é como o renderer volta ao Grafana pela rede interna.
+      - GF_RENDERING_SERVER_URL=http://grafana-renderer:8081/render
+      - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
+      # O Grafana recusa iniciar com o token padrão "-"; tem que ser igual ao AUTH_TOKEN do renderer.
+      - GF_RENDERING_RENDERER_TOKEN=${GRAFANA_RENDERER_TOKEN:?Defina GRAFANA_RENDERER_TOKEN}
     volumes:
       # Datasources do Prometheus e do Loki versionados; dashboards e usuários ficam no banco em /var/lib/grafana.
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
@@ -174,6 +180,16 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    networks:
+      - media-network
+
+  # Chromium headless que gera os PNGs para o Grafana; sem porta publicada, só a rede interna o acessa.
+  grafana-renderer:
+    image: grafana/grafana-image-renderer:latest
+    container_name: grafana-renderer
+    environment:
+      - AUTH_TOKEN=${GRAFANA_RENDERER_TOKEN:?Defina GRAFANA_RENDERER_TOKEN}
+    restart: unless-stopped
     networks:
       - media-network
 

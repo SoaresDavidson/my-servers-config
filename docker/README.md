@@ -58,6 +58,12 @@ Explore ou em Drilldown → Logs, por exemplo `{container="jellyfin"} |= "error"
 sendo o caminho rápido para acompanhar um log ao vivo. A imagem do Loki é distroless (sem shell nem wget),
 então ele não tem healthcheck. O Alloy não tem wget nem curl, e o healthcheck dele usa o `bash`.
 
+As imagens PNG de painéis (Share → Link → Render image) vêm do `grafana-renderer`, um Chromium
+headless na mesma stack, sem porta publicada. Ele abre o painel pelo `http://grafana:3000/` e devolve
+o print. Os dois se autenticam com `GRAFANA_RENDERER_TOKEN`: com o token padrão, o Grafana se recusa
+a iniciar. Não instale o plugin `grafana-image-renderer` com o `grafana cli`, porque a imagem do
+Grafana não tem o Chromium que ele precisa.
+
 Todas as stacks entram na mesma rede Docker (`NETWORK_NAME`), declarada como `external`. A rede é criada pelo `scripts/setup-env.sh`.
 
 Se a sidecar reinicia depois do app (boot lento, por exemplo), o app fica preso num network namespace órfão, só com `lo`, e para de responder pela LAN e pelo tailnet. Por isso o healthcheck de cada app começa com `test -e /sys/class/net/eth0`, e o label `autoheal=true` deixa o `autoheal` (stack `shared`) reiniciar o app, que volta já no namespace atual da sidecar. A imagem do dozzle é `scratch` (sem shell), então o healthcheck dela é só `/dozzle healthcheck` e não detecta o namespace órfão; se o dozzle sumir da rede depois de um reinício da sidecar, reinicie-o à mão. (Montar o busybox via volume `type: image` resolveria; não foi feito porque o CasaOS, já removido, não validava esse compose.)
@@ -122,6 +128,7 @@ o script retorna erro ao final para registrar a falha.
 | cadvisor (métricas por container, mesma stack) | — (só rede Docker) | 8080 |
 | loki (logs dos containers, mesma stack) | — (só rede Docker) | 3100 |
 | alloy (coletor de logs para o Loki, mesma stack) | — | 12345 (só no container) |
+| grafana-renderer (PNG de painéis, mesma stack) | — (só rede Docker) | 8081 |
 | adguard (DNS com bloqueio de anúncios) | 3080 (web), 53 tcp/udp no `HOST_LAN_IP` (DNS) | 80, 53 |
 | shared (flaresolverr, decluttarr, autoheal) | — | — |
 | clamav (antivírus dos downloads) | — | — |
