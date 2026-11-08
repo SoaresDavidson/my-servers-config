@@ -7,7 +7,7 @@ Uma stack por serviço (exceto `shared` e `backup`, ver abaixo), agrupadas por a
 | `media/` | jellyfin, jellyseerr, sonarr, radarr, lidarr, prowlarr, bazarr, profilarr, qbittorrent, questarr |
 | `books/` | calibre, bookshelf, shelfarr, lazylibrarian, kosync |
 | `server/` | shared, adguard, backup, prometheus, dozzle, homepage, clamav |
-| `apps/` | nextcloud, onlyoffice, hermes |
+| `apps/` | nextcloud (com o onlyoffice), hermes |
 
 O nome da pasta da stack (não o do grupo) continua sendo o nome do projeto no Compose, então mover uma
 stack de grupo não muda os nomes dos containers. Os grupos ficam direto em `docker/` e os scripts percorrem `docker/*/*/`. Em geral, cada diretório tem:
@@ -92,7 +92,7 @@ O bind `./ts-serve.json` é relativo ao diretório do compose. Instalando pelo C
 | questarr | 5000 | 5000 |
 | hermes (Hermes Agent) | 9119 (dashboard), 8642 (API) | 9119, 8642 |
 | nextcloud (Postgres e Redis em 127.0.0.1, no namespace da sidecar) | 7580 | 80 |
-| onlyoffice (editor de documentos do Nextcloud) | — (tailnet e rede Docker) | 80 |
+| nextcloud → onlyoffice (editor de documentos, mesma stack) | — (tailnet e rede Docker) | 80 |
 | homepage (dashboard dos apps) | 3000 | 3000 |
 | dozzle (logs dos containers) | 8888 | 8080 |
 | prometheus (métricas, sem Tailscale) | 9091 (HTTP, só no `HOST_LAN_IP`) | 9090 |
@@ -216,13 +216,13 @@ sed -i "s|progress_data\['timestamp'\]/1000|progress_data['timestamp']|" action.
 
 ## Nextcloud e OnlyOffice
 
-Instalação limpa em `${CONFIG_HOST_PATH}/nextcloud` e `${CONFIG_HOST_PATH}/onlyoffice` (a do CasaOS ficou em
+O OnlyOffice está na stack `nextcloud`, com sidecar própria (`onlyoffice-ts-serve.json`). Instalação limpa em `${CONFIG_HOST_PATH}/nextcloud` e `${CONFIG_HOST_PATH}/onlyoffice` (a do CasaOS ficou em
 `/DATA/AppData/big-bear-*`). Com `html/` vazio, a imagem instala sozinha com Postgres em `127.0.0.1` e a conta
 `NEXTCLOUD_ADMIN_USER`/`NEXTCLOUD_ADMIN_PASSWORD` do `.env`. Uma pasta `html/` que já tem `version.php` não é
 reinstalada, mesmo sem `config.php`: para recomeçar, apague `html/` e `db/` com a stack parada.
 
 O Nextcloud responde em três endereços: `https://nextcloud.<tailnet>.ts.net` (tailscale serve), `http://<HOST_LAN_IP>:7580`
-e `http://tailscale-nextcloud` (rede Docker, usado pelo OnlyOffice). Entre as stacks, use o nome do serviço
+e `http://tailscale-nextcloud` (rede Docker, usado pelo OnlyOffice). Entre os serviços, use o nome do serviço
 (`tailscale-nextcloud`, `tailscale-onlyoffice`), não o `container_name`: o `_` não vale em hostname e o cliente HTTP
 do Nextcloud o codifica (`onlyoffice%5ftailscale`), quebrando a conversão. `OVERWRITECONDADDR=^127\.0\.0\.1$` faz o https e o
 host do tailnet valerem só para o que chega pelo tailscale serve; os outros dois seguem em http. O que a imagem só grava
@@ -231,7 +231,7 @@ O que fica no banco e basta fazer uma vez (instalar o app onlyoffice, criar a pa
 por `hooks/post-installation/10-setup.sh`.
 
 O editor abre no navegador em `https://onlyoffice.<tailnet>.ts.net`, então só funciona para quem está no tailnet. Na LAN
-os arquivos abrem, mas a edição não. O segredo JWT (`ONLYOFFICE_JWT_SECRET`) é o mesmo nas duas stacks.
+os arquivos abrem, mas a edição não. O segredo JWT (`ONLYOFFICE_JWT_SECRET`) é o mesmo nos dois serviços.
 
 O HD de mídia aparece para todos os usuários como a pasta **Mídia** (External Storage local, `${DATA_HOST_PATH}`
 montado `:ro` em `/mnt/midia`). É só leitura duas vezes, no bind e na opção `readonly` do mount, porque a biblioteca é
