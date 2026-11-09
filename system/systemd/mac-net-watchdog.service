@@ -1,0 +1,12 @@
+# Recupera a rede quando o adaptador Thunderbolt (ens9) some (ver sbin/mac-net-watchdog).
+# Disparado por mac-net-watchdog.timer; não tem [Install] próprio.
+# Instalar (depois de instalar system/sbin/mac-net-watchdog):
+#   sudo install -D -m 644 -o root -g root system/systemd/mac-net-watchdog.service /etc/systemd/system/mac-net-watchdog.service
+[Unit]
+Description=Recupera a rede do adaptador Thunderbolt (ens9)
+After=networking.service
+
+[Service]
+Type=oneshot
+StateDirectory=mac-net-watchdog
+ExecStart=/usr/local/sbin/mac-net-watchdog

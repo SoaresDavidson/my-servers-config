@@ -1,0 +1,92 @@
+#!/bin/sh
+# Recupera a rede quando o adaptador Thunderbolt→Gigabit (ens9, tg3) some. No boot de 09/11/2026 o
+# Thunderbolt falhou ao ler a DROM do adaptador ("reading DROM failed", "failed to initialize port 1"):
+# o adaptador aparece em /sys/bus/thunderbolt, mas a placa PCIe dentro dele não, e o servidor fica
+# sem rede nenhuma (nem Tailscale) até alguém ir até ele. Um rescan do PCI traz a placa de volta.
+# Roda pelo timer (ver systemd/mac-net-watchdog.timer): 90 s depois do boot e a cada 5 min.
+#
+# Passos, do mais leve ao mais drástico:
+#   1. ens9 existe, mas sem IPv4  -> ifdown/ifup.
+#   2. ens9 não existe            -> autoriza o Thunderbolt, rescan do PCI e ifup.
+#   3. continua sem ens9          -> reboot, no máximo MAX_REBOOTS vezes seguidas.
+# Só olha a interface local, não a internet: queda do roteador ou da operadora não causa reboot.
+#
+# Instalar:
+#   sudo install -m 755 -o root -g root system/sbin/mac-net-watchdog /usr/local/sbin/mac-net-watchdog
+set -u
+
+IFACE=ens9
+MAX_REBOOTS=2
+STATE_DIR="${STATE_DIRECTORY:-/var/lib/mac-net-watchdog}"
+REBOOTS_FILE="$STATE_DIR/reboots"
+
+log() { echo "mac-net-watchdog: $*"; }
+
+iface_exists() { [ -e "/sys/class/net/$IFACE" ]; }
+
+has_ipv4() { ip -4 -o addr show dev "$IFACE" 2>/dev/null | grep -q inet; }
+
+# Espera até $1 segundos pela interface aparecer.
+wait_iface() {
+  i=0
+  while [ "$i" -lt "$1" ]; do
+    iface_exists && return 0
+    sleep 1
+    i=$((i + 1))
+  done
+  iface_exists
+}
+
+# ifdown --force limpa o estado do ifupdown, que pode achar que a interface ainda está configurada
+# depois de ela sumir e voltar; sem isso o ifup não faz nada.
+bring_up() {
+  ifdown --force "$IFACE" >/dev/null 2>&1
+  ifup "$IFACE"
+  # O DHCP pode levar alguns segundos depois do ifup voltar.
+  i=0
+  while [ "$i" -lt 20 ] && ! has_ipv4; do sleep 1; i=$((i + 1)); done
+  has_ipv4
+}
+
+reboots() { cat "$REBOOTS_FILE" 2>/dev/null || echo 0; }
+
+mkdir -p "$STATE_DIR"
+
+if iface_exists && has_ipv4; then
+  [ "$(reboots)" -ne 0 ] && log "rede ok, zerando o contador de reboots"
+  echo 0 > "$REBOOTS_FILE"
+  exit 0
+fi
+
+if iface_exists; then
+  log "$IFACE existe, mas sem IPv4; reconfigurando"
+  if bring_up; then
+    log "$IFACE recuperada com ifup"
+    echo 0 > "$REBOOTS_FILE"
+    exit 0
+  fi
+  # A placa está lá: sem IP é cabo solto, roteador desligado ou DHCP fora, e reboot não resolve.
+  log "$IFACE continua sem IPv4 (carrier=$(cat "/sys/class/net/$IFACE/carrier" 2>/dev/null)); verifique cabo e roteador"
+  exit 1
+fi
+
+log "$IFACE não existe; autorizando o Thunderbolt e refazendo a varredura PCI"
+for auth in /sys/bus/thunderbolt/devices/*/authorized; do
+  [ "$(cat "$auth" 2>/dev/null)" = 0 ] && echo 1 > "$auth"
+done
+echo 1 > /sys/bus/pci/rescan
+if wait_iface 30 && bring_up; then
+  log "$IFACE recuperada com rescan do PCI"
+  echo 0 > "$REBOOTS_FILE"
+  exit 0
+fi
+
+count="$(reboots)"
+if [ "$count" -ge "$MAX_REBOOTS" ]; then
+  log "rede continua fora depois de $count reboots seguidos; desistindo até a rede voltar"
+  exit 1
+fi
+echo $((count + 1)) > "$REBOOTS_FILE"
+sync
+log "rede não voltou; reiniciando (tentativa $((count + 1)) de $MAX_REBOOTS)"
+systemctl reboot

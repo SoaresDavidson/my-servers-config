@@ -6,8 +6,9 @@ Configurações do host (Debian 13) fora do Docker. Cada arquivo é copiado para
 |---|---|---|---|
 | `cron.d/` | `apt-update` | `/etc/cron.d/apt-update` | Roda `apt-get update` às 02:50 (antes do backup das 03:00) e grava os pacotes atualizáveis em `/var/lib/host-status/apt-upgradable.txt`, lido pelo hermes. |
 | `apt.conf.d/` | `20auto-upgrades` | `/etc/apt/apt.conf.d/20auto-upgrades` | Liga o unattended-upgrades: atualiza as listas e instala atualizações todo dia, e limpa o cache de `.deb` a cada 7 dias. |
-| `apt.conf.d/` | `52unattended-upgrades-local` | `/etc/apt/apt.conf.d/52unattended-upgrades-local` | Ajustes sobre o `50unattended-upgrades` do pacote: remove dependências e kernels antigos e reinicia às 04:30 só se existir `/var/run/reboot-required`. Docker, Tailscale e CUDA ficam manuais. |
-| `systemd/apt-daily-upgrade.timer.d/` | `override.conf` | `/etc/systemd/system/apt-daily-upgrade.timer.d/override.conf` | Move o unattended-upgrades de ~06:00 para 04:00, depois do backup e antes do reboot das 04:30. Requer `systemctl daemon-reload`. |
+| `apt.conf.d/` | `52unattended-upgrades-local` | `/etc/apt/apt.conf.d/52unattended-upgrades-local` | Ajustes sobre o `50unattended-upgrades` do pacote: remove dependências e kernels antigos e **não** reinicia sozinho (reboot manual quando houver `/var/run/reboot-required`). Docker, Tailscale e CUDA ficam manuais. |
+| `systemd/apt-daily-upgrade.timer.d/` | `override.conf` | `/etc/systemd/system/apt-daily-upgrade.timer.d/override.conf` | Move o unattended-upgrades de ~06:00 para 04:00, depois do backup das 03:00. Requer `systemctl daemon-reload`. |
+| `docker/` | `daemon.json` | `/etc/docker/daemon.json` | Expõe as métricas do dockerd na porta 9323. A chave é `metrics-addr`, com hífen: uma chave desconhecida, como `metrics_addr`, impede o dockerd de subir, e o erro só aparece no próximo restart. Valide com `sudo dockerd --validate` antes de reiniciar. |
 | `systemd/docker.service.d/` | `override.conf` | `/etc/systemd/system/docker.service.d/override.conf` | Sobe o Docker depois de montar o HD de mídia (`/mnt/midia`). Requer `systemctl daemon-reload`. |
 | `default/` | `hd-idle` | `/etc/default/hd-idle` | Para o HD de mídia depois de 20 min sem I/O. Requer o pacote `hd-idle`. |
 | `systemd/powertop.service.d/` | `override.conf` | `/etc/systemd/system/powertop.service.d/override.conf` | Roda `powertop --auto-tune` no boot e depois `usb-keep-awake`. Requer `systemctl daemon-reload`. |
@@ -16,6 +17,7 @@ Configurações do host (Debian 13) fora do Docker. Cada arquivo é copiado para
 | `.` | `mbpfan.conf` | `/etc/mbpfan.conf` | Curva das ventoinhas, antecipada para reagir antes de a CPU esquentar. Requer o pacote `mbpfan`. |
 | `sbin/` e `systemd/` | `mac-gpu-intel`, `mac-gpu-intel.service` | `/usr/local/sbin/mac-gpu-intel`, `/etc/systemd/system/mac-gpu-intel.service` | Desliga a NVIDIA no boot e deixa a tela na Intel. |
 | `sbin/` e `systemd/` | `mac-prochot-off`, `mac-prochot-off.service` | `/usr/local/sbin/mac-prochot-off`, `/etc/systemd/system/mac-prochot-off.service` | Faz a CPU ignorar o PROCHOT externo, que a prende em 800 MHz, e desliga o turbo para limitar o calor. Requer o pacote `msr-tools`. |
+| `sbin/` e `systemd/` | `mac-net-watchdog`, `mac-net-watchdog.service`, `mac-net-watchdog.timer` | `/usr/local/sbin/mac-net-watchdog`, `/etc/systemd/system/mac-net-watchdog.{service,timer}` | Traz de volta a rede do adaptador Thunderbolt (`ens9`) quando ela some: `ifup`, depois rescan do PCI e, por último, reboot (no máximo 2 seguidos). Roda 90 s após o boot e a cada 5 min. Ver [Rede](#rede). |
 | `systemd/` | `hermes-gateway-471fd707.service` | `/etc/systemd/system/hermes-gateway-471fd707.service` | Gateway do Hermes Agent direto no host, com `User=davi`. Ver [Hermes](#hermes). |
 | `systemd/user/` | `vagas-linkedin-consumer.service` | `~/.config/systemd/user/vagas-linkedin-consumer.service` | Consumidor Pub/Sub do Gmail em serviço de usuário com linger ativo. Ver [Vagas do LinkedIn](#vagas-do-linkedin). |
 | `systemd/` | `vagas-linkedin-consumer.service` | `/etc/systemd/system/vagas-linkedin-consumer.service` | Alternativa de serviço de sistema, não habilitar simultaneamente ao serviço de usuário. |
@@ -106,6 +108,24 @@ sudo umount /mnt/midia && sudo chattr +i /mnt/midia && sudo mount /mnt/midia
 `Downloads/` e `media/` precisam estar no mesmo HD para os *arr fazerem hardlink. Para migrar entre discos,
 use `rsync -aH` (um `cp`/`mv` comum desfaz os hardlinks e duplica o espaço).
 
+## Rede
+
+A única rede é o adaptador Apple Thunderbolt→Gigabit (`ens9`, tg3, IP `.35` por reserva de DHCP no roteador).
+No Linux, o Thunderbolt do Mac às vezes falha ao ler a DROM do adaptador no boot (`reading DROM failed`,
+`failed to initialize port 1`): o adaptador aparece em `/sys/bus/thunderbolt`, mas a placa PCIe dentro dele
+não, e o servidor fica sem rede nenhuma, Tailscale incluído. Foi o que aconteceu em 09/11/2026, depois do reboot
+automático das 04:30. Por isso o reboot automático do unattended-upgrades está desligado.
+
+Recuperação manual, no console: `echo 1 > /sys/bus/pci/rescan`, depois `ifdown --force ens9; ifup ens9`.
+O `mac-net-watchdog` faz isso sozinho. Histórico: `journalctl -u mac-net-watchdog`.
+
+```bash
+sudo install -m 755 -o root -g root system/sbin/mac-net-watchdog /usr/local/sbin/mac-net-watchdog
+sudo install -D -m 644 -o root -g root system/systemd/mac-net-watchdog.service /etc/systemd/system/mac-net-watchdog.service
+sudo install -D -m 644 -o root -g root system/systemd/mac-net-watchdog.timer /etc/systemd/system/mac-net-watchdog.timer
+sudo systemctl daemon-reload && sudo systemctl enable --now mac-net-watchdog.timer
+```
+
 ## Horários da madrugada
 
 | Hora | O quê | Origem |
@@ -113,4 +133,3 @@ use `rsync -aH` (um `cp`/`mv` comum desfaz os hardlinks e duplica o espaço).
 | 02:50 | `apt-get update` + lista de pacotes atualizáveis | `cron.d/apt-update` |
 | 03:00 | Backup (offen) | `docker/server/backup` |
 | 04:00–04:10 | unattended-upgrades instala atualizações do Debian | `systemd/apt-daily-upgrade.timer.d/override.conf` |
-| 04:30 | Reboot, só se alguma atualização exigir | `apt.conf.d/52unattended-upgrades-local` |

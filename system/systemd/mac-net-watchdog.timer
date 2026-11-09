@@ -1,0 +1,14 @@
+# Roda o mac-net-watchdog 90 s depois do boot (tempo para o DHCP terminar) e a cada 5 min,
+# para pegar também o adaptador caindo com o sistema ligado.
+# Instalar (depois do .service):
+#   sudo install -D -m 644 -o root -g root system/systemd/mac-net-watchdog.timer /etc/systemd/system/mac-net-watchdog.timer
+#   sudo systemctl daemon-reload && sudo systemctl enable --now mac-net-watchdog.timer
+[Unit]
+Description=Verifica a rede do adaptador Thunderbolt a cada 5 min
+
+[Timer]
+OnBootSec=90s
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target
