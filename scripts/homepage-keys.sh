@@ -34,9 +34,7 @@ arr_key() {
 
 set_var HOMEPAGE_VAR_SONARR_KEY "$(arr_key sonarr)"
 set_var HOMEPAGE_VAR_RADARR_KEY "$(arr_key radarr)"
-set_var HOMEPAGE_VAR_LIDARR_KEY "$(arr_key lidarr)"
 set_var HOMEPAGE_VAR_PROWLARR_KEY "$(arr_key prowlarr)"
-set_var HOMEPAGE_VAR_BOOKSHELF_KEY "$(arr_key bookshelf)"
 
 # Bazarr: auth.apikey no config.yaml.
 set_var HOMEPAGE_VAR_BAZARR_KEY "$(awk '/^auth:/{a=1;next} /^[^ ]/{a=0} a && $1=="apikey:"{print $2; exit}' \

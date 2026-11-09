@@ -14,7 +14,7 @@ layout:
     columns: 4
   Livros:
     style: row
-    columns: 4
+    columns: 2
   Sistema:
     style: row
     columns: 4

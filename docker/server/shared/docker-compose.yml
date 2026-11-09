@@ -42,11 +42,6 @@ services:
         [{"base_url": "http://sonarr_tailscale:8989", "api_key": "${HOMEPAGE_VAR_SONARR_KEY}"}]
       RADARR: >
         [{"base_url": "http://radarr_tailscale:7878", "api_key": "${HOMEPAGE_VAR_RADARR_KEY}"}]
-      LIDARR: >
-        [{"base_url": "http://lidarr_tailscale:8686", "api_key": "${HOMEPAGE_VAR_LIDARR_KEY}"}]
-      # Bookshelf e um fork do Readarr, mesma API.
-      READARR: >
-        [{"base_url": "http://bookshelf_tailscale:8787", "api_key": "${HOMEPAGE_VAR_BOOKSHELF_KEY}"}]
       QBITTORRENT: >
         [{"base_url": "http://qbittorrent:8080", "username": "${QBITTORRENT_USERNAME:?defina QBITTORRENT_USERNAME no .env}", "password": "${QBITTORRENT_PASSWORD:?defina QBITTORRENT_PASSWORD no .env}"}]
     volumes:

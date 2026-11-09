@@ -2,7 +2,7 @@
 # Grava no qBittorrent (via WebAPI) a lista de arquivos que nunca são baixados.
 # Rodar no servidor, depois de trocar a lista ou reinstalar o qBittorrent.
 #
-# A lista vale para todas as categorias, inclusive "game" (Questarr), então não inclui .exe, .bat
+# A lista vale para todas as categorias, inclusive "game", então não inclui .exe, .bat
 # nem arquivos compactados, que jogos usam de verdade. Nas categorias dos *arr, esses tipos já
 # são barrados pelo REMOVE_BAD_FILES do Decluttarr (stack shared). Aqui ficam só tipos que não
 # têm uso legítimo em torrent nenhum: atalhos, protetores de tela e scripts do Windows Script Host.
