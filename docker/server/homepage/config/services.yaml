@@ -43,15 +43,6 @@
           type: radarr
           url: http://radarr_tailscale:7878
           key: {{HOMEPAGE_VAR_RADARR_KEY}}
-    - Lidarr:
-        icon: lidarr.png
-        href: https://lidarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
-        server: local
-        container: lidarr
-        widget:
-          type: lidarr
-          url: http://lidarr_tailscale:8686
-          key: {{HOMEPAGE_VAR_LIDARR_KEY}}
     - Bazarr:
         icon: bazarr.png
         href: https://bazarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
@@ -75,23 +66,8 @@
         href: https://profilarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
         server: local
         container: profilarr
-    - Questarr:
-        icon: mdi-gamepad-variant
-        href: https://questarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
-        server: local
-        container: questarr
 
 - Livros:
-    - Bookshelf:
-        icon: readarr.png
-        href: https://bookshelf.{{HOMEPAGE_VAR_TS_DOMAIN}}
-        description: Fork do Readarr
-        server: local
-        container: bookshelf
-        widget:
-          type: readarr
-          url: http://bookshelf_tailscale:8787
-          key: {{HOMEPAGE_VAR_BOOKSHELF_KEY}}
     - Calibre:
         icon: calibre.png
         href: https://calibre.{{HOMEPAGE_VAR_TS_DOMAIN}}
@@ -102,17 +78,6 @@
         href: https://shelfarr.{{HOMEPAGE_VAR_TS_DOMAIN}}
         server: local
         container: shelfarr
-    - LazyLibrarian:
-        icon: lazylibrarian.png
-        href: https://lazylibrarian.{{HOMEPAGE_VAR_TS_DOMAIN}}
-        server: local
-        container: lazylibrarian
-    - KOSync:
-        icon: koreader.png
-        href: https://kosync.{{HOMEPAGE_VAR_TS_DOMAIN}}/healthcheck
-        description: Sync de progresso do KOReader
-        server: local
-        container: kosync
 
 - Sistema:
     - Nextcloud:

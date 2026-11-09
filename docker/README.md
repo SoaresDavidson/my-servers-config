@@ -4,8 +4,8 @@ Uma stack por serviço (exceto `shared` e `backup`, ver abaixo), agrupadas por a
 
 | Grupo | Stacks |
 | --- | --- |
-| `media/` | jellyfin, jellyseerr, sonarr, radarr, lidarr, prowlarr, bazarr, profilarr, qbittorrent, questarr |
-| `books/` | calibre, bookshelf, shelfarr, lazylibrarian, kosync |
+| `media/` | jellyfin, jellyseerr, sonarr, radarr, prowlarr, bazarr, profilarr, qbittorrent |
+| `books/` | calibre, shelfarr |
 | `server/` | shared, adguard, backup, prometheus, dozzle, homepage, clamav |
 | `apps/` | nextcloud (com o onlyoffice), falaai |
 
@@ -108,18 +108,13 @@ o script retorna erro ao final para registrar a falha.
 | sonarr | 8989 | 8989 |
 | radarr | 7878 | 7878 |
 | prowlarr | 9696 | 9696 |
-| lidarr | 8686 | 8686 |
 | bazarr | 6767 | 6767 |
 | profilarr | 6868 | 6868 |
 | qbittorrent | 8080 (sem Tailscale, atrás da Surfshark) | 8080 |
 | jellyfin | 8096 | 8096 |
 | jellyseerr | 5055 | 5055 |
-| bookshelf (fork do Readarr) | 8787 | 8787 |
 | calibre | 8082 (GUI), 8081 (content server), 9090 (dispositivo sem fio) | 8080, 8081, 9090 |
 | shelfarr | 5056 | 80 |
-| lazylibrarian | 5299 | 5299 |
-| kosync (KOReader Sync Server oficial) | 17200 (HTTP, só no `HOST_LAN_IP`) | 17200 (HTTP), 7200 (HTTPS autoassinado) |
-| questarr | 5000 | 5000 |
 | nextcloud (Postgres e Redis em 127.0.0.1, no namespace da sidecar) | 7580 | 80 |
 | nextcloud → onlyoffice (editor de documentos, mesma stack) | — (tailnet e rede Docker) | 80 |
 | homepage (dashboard dos apps) | 80 e 3000 | 3000 |
@@ -175,80 +170,12 @@ gpg -d media-stack-<data>.tar.zst.gpg | zstd -d | tar -x
 # backup/env/.env               -> docker/.env
 ```
 
-## KOSync (progresso do KOReader)
+## Calibre (plugin KOReader Sync)
 
-Para usar diretamente na LAN, configure o servidor personalizado do KOReader como
-`http://<HOST_LAN_IP>:17200` (por exemplo, `http://192.168.100.35:17200`). A porta é publicada
-somente no IP definido por `HOST_LAN_IP`; a variável é obrigatória para evitar um bind acidental em
-todas as interfaces. O Kindle precisa estar na mesma rede e conseguir acessar esse IP. HTTP não
-cifra o tráfego: use apenas em rede confiável e não encaminhe essa porta no roteador.
-O acesso HTTPS pelo Tailscale continua disponível em `https://kosync.<tailnet>.ts.net`.
-
-Para cadastrar uma conta pelo KOReader, altere temporariamente `ENABLE_USER_REGISTRATION=false`
-para `ENABLE_USER_REGISTRATION=true` no `docker-compose.yml` desta stack e recrie a aplicação:
-
-```sh
-cd ~/my-servers-config/docker/books/kosync
-docker compose up -d --force-recreate kosync
-```
-
-Com um livro aberto, use **Sincronização de progresso → Registrar/Entrar** no KOReader.
-Depois de criar as contas necessárias, volte a variável para `false` e repita o comando;
-isso fecha novos cadastros sem apagar as contas existentes. Um simples `docker compose restart`
-não aplica alterações de variáveis de ambiente.
-
-Por padrão, o registro fica desligado (`ENABLE_USER_REGISTRATION=false`). Como alternativa ao cadastro
-pelo KOReader, crie a conta direto no Redis, no **db 1** (o db do ambiente `production`). A chave é o MD5
-da senha, o mesmo valor que o KOReader envia:
-
-```sh
-key=$(printf %s '<senha>' | md5sum | cut -d' ' -f1)
-docker exec kosync redis-cli -n 1 SETNX user:<usuario>:key "$key"
-```
-
-### Calibre (plugin KOReader Sync)
-
-O plugin [KOReader Sync](https://github.com/kyxap/koreader-calibre-plugin) (v0.8.2) lê o progresso de dois jeitos:
-
-- **ProgressSync:** todo dia às 04:00, com a GUI aberta (o container mantém), ou pelo menu do plugin. Ele consulta
-  `http://kosync_tailscale:17200/syncs/progress/<#ko_md5>` como `davi` e preenche progresso, local, dispositivo e
-  datas. Só pega livros com `#ko_md5` preenchido e status vazio ou `reading`.
-- **Dispositivo sem fio:** com o KOReader conectado pela porta 9090, lê os sidecars `.sdr` e preenche também
-  status, nota, resenha, marcações e o próprio `#ko_md5`.
-
-O `#ko_md5` é o `document` que o dispositivo manda ao kosync, e cada um calcula de um jeito:
-
-- **CrossPoint** (modo *Filename*): `md5` do nome do arquivo no dispositivo. O driver CrossPoint Reader envia como
-  `{title} - {authors}.epub` (via `ascii_filename`), então o Calibre consegue calcular. O `fill-ko-md5.py` preenche
-  os livros com a coluna vazia, usando o próprio driver para gerar o nome. Rode depois de adicionar livros:
-
-  ```sh
-  docker stop calibre
-  docker run --rm --user 1000:1000 -e HOME=/config -v ${CONFIG_HOST_PATH}/calibre/config:/config \
-    -v "$PWD/books/calibre":/work:ro --entrypoint calibre-debug lscr.io/linuxserver/calibre:latest /work/fill-ko-md5.py
-  docker start calibre
-  ```
-  (Com a GUI parada: ela mantém um cache e não veria a mudança.)
-- **Kindle** (KOReader, modo *binary*): *partial MD5* do conteúdo do arquivo no Kindle. Ele difere do arquivo da
-  biblioteca, porque o Calibre reescreve os metadados ao enviar. Esse hash chega pela sincronização sem fio do plugin.
-  Essa sincronização **sobrescreve** o
-  `#ko_md5` com o hash do Kindle.
-
-A coluna guarda um hash por livro, então o Calibre acompanha um dispositivo por livro. Para unificar, o KOReader do
-Kindle teria que usar o modo *Filename*, e o driver sem fio teria que ter o mesmo template do CrossPoint (hoje é
-`{title} - {authors} ({id})`).
-
-As 16 colunas `#ko_*` foram criadas com os formatos padrão do plugin. A config fica em
-`${CONFIG_HOST_PATH}/calibre/config/.config/calibre/plugins/KOReader Sync.json`.
-
-O zip instalado tem um patch de uma linha, do [PR #159](https://github.com/kyxap/koreader-calibre-plugin/pull/159),
-para o [bug #163](https://github.com/kyxap/koreader-calibre-plugin/issues/163). O plugin divide por 1000 o
-`timestamp` do kosync, que vem em segundos, e as datas caíam em 1970. Ao atualizar o plugin, confira se o PR já
-entrou; se não, reaplique:
-
-```sh
-sed -i "s|progress_data\['timestamp'\]/1000|progress_data['timestamp']|" action.py
-```
+O plugin [KOReader Sync](https://github.com/kyxap/koreader-calibre-plugin) (v0.8.2) lê o progresso pela conexão de
+dispositivo sem fio: com o KOReader do Kindle conectado pela porta 9090, ele lê os sidecars `.sdr` e preenche as
+colunas `#ko_*` (progresso, status, nota, resenha e marcações). As 16 colunas foram criadas com os formatos padrão do
+plugin. A config fica em `${CONFIG_HOST_PATH}/calibre/config/.config/calibre/plugins/KOReader Sync.json`.
 
 ## Nextcloud e OnlyOffice
 
@@ -292,7 +219,7 @@ Quatro camadas, da mais barata à mais cara:
 1. **qBittorrent** — `scripts/qbittorrent-exclusions.sh` grava via WebAPI a lista de *Excluded file names*:
    atalhos, protetores de tela e scripts do Windows Script Host (`.lnk`, `.url`, `.scr`, `.vbs`...), que não
    têm uso legítimo. A lista vale para todas as categorias, então `.exe` e compactados não entram por causa
-   da categoria `game` (Questarr).
+   da categoria `game`.
 2. **Decluttarr** (stack `shared`) — nas categorias dos *arr, `REMOVE_BAD_FILES` desmarca no qBittorrent
    tudo que não é mídia (inclusive `.exe` e `.rar`) e manda o release para a blocklist; `REMOVE_FAILED_IMPORTS`
    remove o que o *arr recusou importar, como "Found executable file".
@@ -316,9 +243,8 @@ Os containers que precisam criar hardlinks recebem o pai comum como **um único 
 └── media
     ├── tv             # root folder do Sonarr
     ├── movies         # root folder do Radarr
-    ├── music          # root folder do Lidarr
-    ├── books          # biblioteca do Calibre e root folder do Bookshelf
-    │   └── inbox      # saida do Shelfarr e do LazyLibrarian; Calibre importa daqui (Automatic adding)
+    ├── books          # biblioteca do Calibre
+    │   └── inbox      # saida do Shelfarr; Calibre importa daqui (Automatic adding)
     └── audiobooks     # audiobooks do Shelfarr
 ```
 
