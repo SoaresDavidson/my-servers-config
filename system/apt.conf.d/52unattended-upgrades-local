@@ -2,11 +2,11 @@
 // Só instala pacotes das origens Debian padrão (trixie, trixie-updates, trixie-security);
 // docker, tailscale e cuda vêm de repos de terceiros e continuam manuais.
 // O upgrade roda às 04:00 (ver system/systemd/apt-daily-upgrade.timer.d), depois do backup
-// das 03:00, e o reboot só acontece se o upgrade criar /var/run/reboot-required.
+// das 03:00. Não reinicia sozinho: em 09/11/2026 o reboot automático das 04:30 (kernel novo)
+// subiu sem a rede do Thunderbolt e o servidor ficou ~15 h fora até alguém ir até ele.
+// Quando existir /var/run/reboot-required, reinicie à mão com alguém por perto.
 // Instalar: sudo install -m 644 -o root -g root system/apt.conf.d/52unattended-upgrades-local /etc/apt/apt.conf.d/52unattended-upgrades-local
 Unattended-Upgrade::Remove-Unused-Dependencies "true";
 Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
-Unattended-Upgrade::Automatic-Reboot "true";
-Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
-Unattended-Upgrade::Automatic-Reboot-Time "04:30";
+Unattended-Upgrade::Automatic-Reboot "false";
 Unattended-Upgrade::SyslogEnable "true";
