@@ -26,6 +26,11 @@ done
 printf '%s\n' "Recriando as stacks com as imagens atualizadas..."
 "$SCRIPT_DIR/up-all.sh"
 
+# Cada pull deixa a versão anterior da imagem sem tag; depois do up-all nenhum container a usa mais.
+# Só apaga imagens dangling: imagens com tag de containers parados ficam.
+printf '%s\n' "Removendo imagens antigas..."
+docker image prune -f || printf '%s\n' "Falha ao remover imagens antigas." >&2
+
 if [ -n "$failed_stacks" ]; then
   printf '%s\n' "Imagens disponíveis aplicadas, mas houve falha no download das stacks:$failed_stacks" >&2
   exit 1
