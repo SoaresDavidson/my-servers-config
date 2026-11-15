@@ -43,6 +43,10 @@ services:
       # Resolvido pelo DNS da rede compartilhada (o netns é o do sidecar tailscale).
       - PARSER_HOST=profilarr-parser
       - PARSER_PORT=5000
+      # O tailscale serve termina o HTTPS e repassa em HTTP: sem isso o login pelo
+      # endereço do tailnet cai no CSRF (origin https != esperado http). Aceita uma URL só
+      # (lista com vírgula não funciona na 2.3.1), então o login pela LAN (:6868) fica bloqueado.
+      - ORIGIN=https://profilarr.${TS_DOMAIN}
     volumes:
       - ${CONFIG_HOST_PATH}/profilarr/v2:/config
     restart: on-failure:5
