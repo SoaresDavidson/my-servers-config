@@ -31,7 +31,7 @@ services:
       start_period: 1h
     # Um scan completo não deve disputar CPU com o Jellyfin.
     cpu_shares: 256
-    restart: unless-stopped
+    restart: always
     networks:
       - media-network
 

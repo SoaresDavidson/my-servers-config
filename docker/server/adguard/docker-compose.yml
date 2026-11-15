@@ -43,7 +43,7 @@ services:
     volumes:
       - ${CONFIG_HOST_PATH}/adguard/work:/opt/adguardhome/work
       - ${CONFIG_HOST_PATH}/adguard/conf:/opt/adguardhome/conf
-    restart: unless-stopped
+    restart: always
     healthcheck:
       # Interface web na porta 80, padrão do assistente inicial.
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -q --spider http://127.0.0.1:80/ || exit 1"]

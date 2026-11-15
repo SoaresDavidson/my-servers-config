@@ -18,7 +18,7 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
-    restart: always
+    restart: on-failure:5
     networks:
       - media-network
 
@@ -43,7 +43,7 @@ services:
       - ${DATA_HOST_PATH}/Downloads:/downloads
       - ${DATA_HOST_PATH}/media/books/inbox:/ebooks
       - ${DATA_HOST_PATH}/media/audiobooks:/audiobooks
-    restart: unless-stopped
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -fs -o /dev/null http://127.0.0.1:80/"]
       interval: 2m

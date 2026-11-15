@@ -43,7 +43,7 @@ services:
       - DOZZLE_ENABLE_MCP=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped
+    restart: always
     healthcheck:
       # A imagem do dozzle e scratch (sem shell), entao nao testa eth0 como os outros apps.
       # O volume type: image com busybox quebrava o parser de compose do CasaOS.

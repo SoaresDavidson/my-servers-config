@@ -37,7 +37,7 @@ services:
     volumes:
       - ${CONFIG_HOST_PATH}/qbittorrent/config:/config
       - ${DATA_HOST_PATH}:/data
-    restart: unless-stopped
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/"]
       interval: 2m

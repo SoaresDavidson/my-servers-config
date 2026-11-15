@@ -18,7 +18,7 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
-    restart: always
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "pgrep tailscaled"]
       interval: 2m
@@ -49,7 +49,7 @@ services:
       - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD:?defina NEXTCLOUD_DB_PASSWORD no .env}
     volumes:
       - ${CONFIG_HOST_PATH}/nextcloud/db:/var/lib/postgresql/data
-    restart: unless-stopped
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && pg_isready -h 127.0.0.1"]
       interval: 2m
@@ -69,7 +69,7 @@ services:
     depends_on:
       tailscale-nextcloud:
         condition: service_healthy
-    restart: unless-stopped
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && redis-cli -h 127.0.0.1 ping | grep -q PONG"]
       interval: 2m
@@ -121,7 +121,7 @@ services:
       - ./hooks/before-starting:/docker-entrypoint-hooks.d/before-starting:ro
       # External Storage "Mídia". Só leitura: a biblioteca é dos *arr (hardlinks e seeding).
       - ${DATA_HOST_PATH}:/mnt/midia:ro
-    restart: unless-stopped
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -fs http://localhost/status.php | grep -q '\"installed\":true'"]
       interval: 2m
@@ -148,7 +148,7 @@ services:
       - ${CONFIG_HOST_PATH}/nextcloud/html:/var/www/html
       # Os background jobs também varrem o External Storage.
       - ${DATA_HOST_PATH}:/mnt/midia:ro
-    restart: unless-stopped
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0"]
       interval: 2m
@@ -174,7 +174,7 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
-    restart: always
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "pgrep tailscaled"]
       interval: 2m
@@ -209,7 +209,7 @@ services:
       - ${CONFIG_HOST_PATH}/onlyoffice/redis:/var/lib/redis
       - ${CONFIG_HOST_PATH}/onlyoffice/data:/var/www/onlyoffice/Data
       - ${CONFIG_HOST_PATH}/onlyoffice/logs:/var/log/onlyoffice
-    restart: unless-stopped
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -fs http://localhost/healthcheck | grep -q true"]
       interval: 2m

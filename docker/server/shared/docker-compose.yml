@@ -6,7 +6,7 @@ services:
       - TZ=${TZ}
       # Nao baixa imagens/CSS/fontes: host antigo, cada pagina custa menos pro Chromium.
       - DISABLE_MEDIA=true
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8191/ || exit 1"]
       interval: 2m
@@ -47,7 +47,7 @@ services:
     volumes:
       # Mesmo /data dos *arr, so leitura, para o job detect_deletions enxergar a biblioteca.
       - ${DATA_HOST_PATH}:/data:ro
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f decluttarr || exit 1"]
       interval: 2m
@@ -72,7 +72,7 @@ services:
     volumes:
       # Precisa da API de restart (o :ro so impede trocar o arquivo do socket, nao limita a API).
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped
+    restart: always
     network_mode: none
 
 networks:
