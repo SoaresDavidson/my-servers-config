@@ -56,7 +56,7 @@ services:
       # Config versionada no repositório; logs ficam fora dele.
       - ./config:/app/config
       - ${CONFIG_HOST_PATH}/homepage/logs:/app/config/logs
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -qO /dev/null http://127.0.0.1:3000/"]
       interval: 2m
@@ -73,7 +73,7 @@ services:
       - POST=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped
+    restart: always
     networks:
       - media-network
 

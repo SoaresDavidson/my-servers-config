@@ -17,7 +17,7 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
-    restart: always
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "pgrep tailscaled"]
       interval: 2m
@@ -52,7 +52,7 @@ services:
     volumes:
       # Banco, episódios e gmail-token.json (dono 1000:1000).
       - ${CONFIG_HOST_PATH}/falaai:/data
-    restart: unless-stopped
+    restart: on-failure:5
 
 networks:
   media-network:

@@ -17,7 +17,7 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
-    restart: always
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "pgrep tailscaled"]
       interval: 2m
@@ -42,7 +42,7 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_HOST_PATH}/prowlarr/config:/config
-    restart: unless-stopped
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && curl -f http://localhost:9696/"]
       interval: 2m

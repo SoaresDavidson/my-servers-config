@@ -16,7 +16,7 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ${CONFIG_HOST_PATH:?Defina CONFIG_HOST_PATH}/prometheus:/prometheus
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:9090/-/ready"]
       interval: 30s
@@ -47,7 +47,7 @@ services:
       # rslave: discos montados depois da subida (HD de mídia) também aparecem.
       - /:/host:ro,rslave
       - /run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--spider", "http://${HOST_LAN_IP}:9100/metrics"]
       interval: 30s
@@ -82,7 +82,7 @@ services:
       - /run/containerd/containerd.sock:/run/containerd/containerd.sock:ro
     devices:
       - /dev/kmsg
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
       interval: 30s
@@ -105,7 +105,7 @@ services:
     volumes:
       - ./loki.yml:/etc/loki/loki.yml:ro
       - ${CONFIG_HOST_PATH:?Defina CONFIG_HOST_PATH}/loki:/loki
-    restart: unless-stopped
+    restart: always
     # Sem healthcheck: a imagem é distroless, sem shell nem wget.
     networks:
       - media-network
@@ -129,7 +129,7 @@ services:
       - ${CONFIG_HOST_PATH:?Defina CONFIG_HOST_PATH}/alloy:/var/lib/alloy/data
       # Acesso total ao Docker, mesmo montado :ro.
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped
+    restart: always
     healthcheck:
       # A imagem não tem wget nem curl; o bash fala HTTP com a interface local do Alloy.
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/12345 && printf 'GET /-/ready HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q ' 200 ' <&3"]
@@ -176,7 +176,7 @@ services:
       # Datasources do Prometheus e do Loki versionados; dashboards e usuários ficam no banco em /var/lib/grafana.
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ${CONFIG_HOST_PATH:?Defina CONFIG_HOST_PATH}/grafana:/var/lib/grafana
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:3000/api/health"]
       interval: 30s
@@ -192,7 +192,7 @@ services:
     container_name: grafana-renderer
     environment:
       - AUTH_TOKEN=${GRAFANA_RENDERER_TOKEN:?Defina GRAFANA_RENDERER_TOKEN}
-    restart: unless-stopped
+    restart: always
     networks:
       - media-network
 

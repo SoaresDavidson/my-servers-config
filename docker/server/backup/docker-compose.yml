@@ -14,7 +14,7 @@ services:
     volumes:
       # rclone.conf com o remote "gdrive". Criado uma vez com `rclone config` (ver README).
       - ${CONFIG_HOST_PATH}/rclone:/config/rclone
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://backup:$$RCLONE_PASS@localhost:8080/"]
       interval: 2m
@@ -55,4 +55,4 @@ services:
       - ../../.env:/backup/env/.env:ro
       # Cópia local, além da do Drive.
       - ${BACKUP_HOST_PATH:-/DATA/Backups/media-stack}:/archive
-    restart: unless-stopped
+    restart: always

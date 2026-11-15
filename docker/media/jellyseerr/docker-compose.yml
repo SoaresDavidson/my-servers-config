@@ -17,7 +17,7 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
-    restart: always
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "pgrep tailscaled"]
       interval: 2m
@@ -43,7 +43,7 @@ services:
       - PORT=5055
     volumes:
       - ${CONFIG_HOST_PATH}/jellyseerr/config:/app/config
-    restart: unless-stopped
+    restart: on-failure:5
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/eth0 && wget -qO /dev/null http://localhost:5055/api/v1/status"]
       interval: 2m
